@@ -1,0 +1,35 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.list {
+  display: flex;
+  gap: var(--space-1);
+  flex-wrap: wrap; /* wrap on narrow screens; overflow would add a scrollbar (the tabs overlap the border) */
+  border-bottom: 1px solid var(--color-border-default);
+}
+.tab {
+  margin-bottom: -1px; /* sits on the list's bottom border */
+  padding: var(--space-2) var(--space-3);
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  font: 500 14px/20px var(--font-sans);
+  color: var(--color-text-body);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.tab:hover {
+  color: var(--color-text-heading);
+  background: var(--color-highlight-bg);
+}
+.active,
+.active:hover {
+  color: var(--color-text-heading);
+  border-bottom-color: var(--color-border-accent);
+}
+.panel:focus-visible {
+  outline-offset: 4px;
+}
