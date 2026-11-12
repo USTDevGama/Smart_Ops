@@ -28,12 +28,42 @@ jobs:
     outputs:
       tag: ${{ steps.vars.outputs.tag }}
     steps:
-      - uses: actions/checkout@v4
+      # Native git checkout: codeload.github.com is blocked on MyCloud, so no actions/checkout.
+      # Cleans the workspace first, fetches exactly GITHUB_SHA, and cleans again after.
+      - name: Checkout exact commit (native git)
+        env:
+          GIT_TERMINAL_PROMPT: '0'
+          GH_TOKEN: ${{ github.token }}
+          REPO_URL: ${{ github.server_url }}/${{ github.repository }}.git
+        run: |
+          git --version
+          cd "$GITHUB_WORKSPACE"
+          [ -d .git ] || git init -q .
+          if git remote get-url origin > /dev/null 2>&1; then
+            git remote set-url origin "$REPO_URL"
+          else
+            git remote add origin "$REPO_URL"
+          fi
+          git reset -q --hard 2> /dev/null || true
+          git clean -ffdxq
+          auth=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)
+          echo "::add-mask::$auth"
+          # Token passed via environment git config, not argv, so it is not visible in `ps`.
+          export GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=http.extraheader GIT_CONFIG_VALUE_0="Authorization: basic $auth"
+          git fetch --no-tags --depth=1 origin "$GITHUB_SHA"
+          git checkout -q --force --detach FETCH_HEAD
+          git clean -ffdxq
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA" || { echo "::error::checked out $(git rev-parse HEAD), expected $GITHUB_SHA"; exit 1; }
+          git log -1 --oneline
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
+      - name: Tool versions
+        run: |
+          git --version
+          node --version
+          npm --version
+          docker --version
+          docker compose version
+          node -e 'process.exit(Number(process.versions.node.split(".")[0]) >= 18 ? 0 : 1)' || { echo "::error::Node 18+ required on the runner"; exit 1; }
 
       - run: npm ci --no-audit --no-fund
       - run: npm run format:check
@@ -69,7 +99,39 @@ jobs:
       IMAGE_TAG: ${{ needs.ci.outputs.tag }}
       COMPOSE_PROJECT_NAME: smart-ops-dashboard
     steps:
-      - uses: actions/checkout@v4
+      # Native git checkout: codeload.github.com is blocked on MyCloud, so no actions/checkout.
+      # Cleans the workspace first, fetches exactly GITHUB_SHA, and cleans again after.
+      - name: Checkout exact commit (native git)
+        env:
+          GIT_TERMINAL_PROMPT: '0'
+          GH_TOKEN: ${{ github.token }}
+          REPO_URL: ${{ github.server_url }}/${{ github.repository }}.git
+        run: |
+          git --version
+          cd "$GITHUB_WORKSPACE"
+          [ -d .git ] || git init -q .
+          if git remote get-url origin > /dev/null 2>&1; then
+            git remote set-url origin "$REPO_URL"
+          else
+            git remote add origin "$REPO_URL"
+          fi
+          git reset -q --hard 2> /dev/null || true
+          git clean -ffdxq
+          auth=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)
+          echo "::add-mask::$auth"
+          # Token passed via environment git config, not argv, so it is not visible in `ps`.
+          export GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=http.extraheader GIT_CONFIG_VALUE_0="Authorization: basic $auth"
+          git fetch --no-tags --depth=1 origin "$GITHUB_SHA"
+          git checkout -q --force --detach FETCH_HEAD
+          git clean -ffdxq
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA" || { echo "::error::checked out $(git rev-parse HEAD), expected $GITHUB_SHA"; exit 1; }
+          git log -1 --oneline
+
+      - name: Tool versions
+        run: |
+          git --version
+          docker --version
+          docker compose version
 
       - name: Check tag and server config
         run: |
