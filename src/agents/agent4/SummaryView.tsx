@@ -27,7 +27,7 @@ function gapLabel(row: ScoreRow, threshold: number): string {
   if (row.score === null) return 'Not assessed';
   if (row.score <= threshold) return 'Gap';
   if (row.score >= STRONG_FROM) return 'Strong';
-  return 'Above gap threshold';
+  return '';
 }
 
 /** The results for one trainee: the same layout for trainee and evaluator. */
