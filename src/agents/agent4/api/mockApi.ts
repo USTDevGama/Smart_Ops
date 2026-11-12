@@ -42,6 +42,14 @@ function summaryFor(traineeId: string, runId: string, status: RunStatus): Summar
     not_assessed: [{ goal: 'G4', label: 'Written updates' }],
     review_required: true,
     versions: { rules: 'r-0.3', mapping: 'm-draft-1', content_library: 'cl-2026-10' },
+    skill_gaps:
+      'G2 Estimation: score 2, severity moderate\n' +
+      '  Evidence: feedback: F-11, interview: Q5\n' +
+      '  Outcome OUT-3 (partial match): Gives a range with stated assumptions.\n',
+    recommendations:
+      'G2 Estimation (score 2)\n' +
+      '  Exercise: EX-07 Estimate a small change list (30 min)\n' +
+      '  Why: Estimation scored 2, below the gap threshold.\n',
     report:
       `Trainee ${traineeId}\n\n` +
       'Assessed 3 of 4 goals.\n\n' +

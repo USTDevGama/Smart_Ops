@@ -45,7 +45,9 @@ export type Summary = {
   not_assessed: { goal: string; label: string }[];
   review_required: boolean;
   versions: { rules: string; mapping: string; content_library: string };
-  // The one text the agent writes; this is what the screen shows.
+  // Three texts the agent writes; the screen shows all three, each from the same checked data.
+  skill_gaps: string;
+  recommendations: string;
   report: string;
 };
 
