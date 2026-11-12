@@ -14,8 +14,8 @@ import { MockClient } from './mock/mockClient';
 
 /**
  * The ONLY surface the React app talks to. Two implementations:
- *   MockClient  (VITE_API_MODE=mock)  in-browser fake backend
- *   HttpClient  (VITE_API_MODE=http)  real backend, see docs/frontend-integration.md
+ *   MockClient  (VITE_USE_MOCKS=true)  in-browser fake backend
+ *   HttpClient  (anything else)        real backend, reached through /agent2-api (see docs/agent2-backend-integration.md)
  * Both implement exactly this interface, so swapping is a config change.
  */
 export interface ApiClient {
@@ -42,8 +42,11 @@ export interface ApiClient {
   getResult(runId: string): Promise<RunResult>;
 }
 
+// Same switch as agents 3 and 4: only VITE_USE_MOCKS=true runs on mock data. The production image builds with
+// VITE_USE_MOCKS=false, so the deployed dashboard talks to the real backend.
 export const API_MODE: 'mock' | 'http' =
-  (import.meta.env.VITE_API_MODE as string) === 'http' ? 'http' : 'mock';
-export const API_BASE_URL: string = (import.meta.env.VITE_API_BASE_URL as string) || '/api/v1';
+  import.meta.env.VITE_USE_MOCKS === 'true' ? 'mock' : 'http';
+// nginx (and the Vite dev proxy) strip /agent2-api, so this reaches the backend's /api/v1.
+export const API_BASE_URL: string = '/agent2-api/api/v1';
 
 export const api: ApiClient = API_MODE === 'http' ? new HttpClient(API_BASE_URL) : new MockClient();

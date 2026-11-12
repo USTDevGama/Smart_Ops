@@ -31,6 +31,7 @@ Status: `merged` (copied in, lint, typecheck, unit and mock browser tests pass).
   database. It does not accept the portal's dev headers (`X-Dev-User`, `X-Dev-Role`) or a Zitadel bearer token. It also calls the
   non-admin role `user` and refuses admins on analyses. Needs a backend change before real mode works through the portal.
 - Port: agent2 proxies to 8001 by default so it can run next to the Agent 3 backend on 8000.
+- Production: nginx route `/agent2-api/` and `AGENT2_API_URL` are in the repo. The server `.env` still needs the `AGENT2_API_URL` line; see `docs/agent2-backend-integration.md`.
 - **Output contract changed on the portal side only.** The result now shows one card per detected flag, then goal scores, then the raw
   JSON. This follows the agent's final JSON (`detected_flags` with `flag`, `confidence`, `status`, `evidence_ids`, `explanation`, and
   `goal_scoring` per trainee). `api/types.ts` gained `Finding.evidence_ids`, optional `trainee_id`, `FindingStatus` value `pending_review`,

@@ -28,7 +28,7 @@ export default defineConfig({
     {
       command: `npm run dev -- --port ${MOCK_PORT} --strictPort`,
       url: `http://localhost:${MOCK_PORT}/login`,
-      env: { VITE_USE_MOCKS: 'true', VITE_API_MODE: 'mock' },
+      env: { VITE_USE_MOCKS: 'true' },
       reuseExistingServer: true,
       timeout: 60_000,
     },
