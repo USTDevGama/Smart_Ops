@@ -1,0 +1,26 @@
+/* ASGD screen theme: UST brand palette, light only (no dark mode).
+   Source: UST_Brand_Design skill, tokens/colors.css, typography.css, materials.css.
+   Scoped to .asgd so the shared shell and the other agents keep their own tokens.
+   Square corners, no shadows, two rule weights. Figures use the mono face. */
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=Figtree:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+.asgd {
+  --ust-bg: #fcfcfa;
+  --ust-bg-alt: #f2f8f8;
+  --ust-ink: #1a1a1a;
+  --ust-ink-soft: #5a5a5a;
+  --ust-ink-mute: #8d9aa1;
+  --ust-accent: #00778b;
+  --ust-accent-deep: #003c51;
+  --ust-accent-soft: #e3efef;
+  --ust-hairline: #dbdbd9;
+  --ust-rule-heavy: #33383c;
+  --ust-track: #ececea;
+
+  --ust-font-display: 'Archivo', 'Figtree', system-ui, sans-serif;
+  --ust-font-text: 'Figtree', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
+  --ust-font-mono: 'IBM Plex Mono', ui-monospace, Consolas, monospace;
+
+  color: var(--ust-ink-soft);
+  font: 400 15px/1.5 var(--ust-font-text);
+}

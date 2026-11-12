@@ -31,8 +31,10 @@ export const AGENTS: AgentDefinition[] = [
   },
   {
     id: 'agent4',
-    name: 'Agent 4',
-    description: 'Placeholder. Team 4 describes the agent here.',
+    name: 'Adaptive Skill-Gap Diagnostic Agent',
+    headerTitle: 'ASGD agent',
+    description:
+      'Asks about a trainee and answers from the trainee database: skill gaps, recommended exercises and the full report. Every report waits for a human review.',
     roles: ['trainee', 'admin'],
     component: lazy(() => import('./agent4')),
   },
