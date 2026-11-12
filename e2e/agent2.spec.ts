@@ -45,7 +45,17 @@ test('trainee sees only the run page and can run and review', async ({ page }) =
     await expect(output).toBeVisible({ timeout: 1_000 });
   }).toPass({ timeout: 45_000 });
 
-  // pasted text works too, and History lists the runs
+  // the output is human readable: flag cards (sources, review, trainee), goal scores, and the raw JSON last
+  const details = page.getByRole('region', { name: 'Output details' });
+  await expect(details.getByRole('heading', { name: /^Detected flags \(\d+\)$/ })).toBeVisible();
+  const card = details.locator('li', { has: page.getByText('Sources', { exact: true }) }).first();
+  await expect(card.getByText('Confidence', { exact: true })).toBeVisible();
+  await expect(card.getByText('Trainee', { exact: true })).toBeVisible();
+  await expect(card.getByText('Review', { exact: true })).toBeVisible();
+  await expect(details.getByRole('heading', { name: 'Trainee goal scores' })).toBeVisible();
+  await expect(details.getByRole('heading', { name: 'Raw JSON' })).toBeVisible();
+
+  // History lists the runs
   await page.getByRole('tab', { name: 'History' }).click();
   await expect(page.getByRole('heading', { name: 'Flag management' })).toHaveCount(0);
 });

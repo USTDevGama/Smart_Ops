@@ -103,21 +103,41 @@ export interface ReviewItem {
   decision: Decision | null;
 }
 
-export type FindingStatus = 'auto_accepted' | 'accepted' | 'rejected' | 'escalated';
+/**
+ * pending_review: raised but not yet decided by a person (the status the agent writes first).
+ * The rest are final: the agent was confident enough (auto_accepted) or a person decided.
+ */
+export type FindingStatus =
+  'pending_review' | 'auto_accepted' | 'accepted' | 'rejected' | 'escalated';
 
 export interface Finding {
   finding_id: string;
   flag_id: string;
   flag_name: string;
   confidence: number;
-  evidence: string;
-  location: string;
+  /** Ids of the input records this finding is based on (e.g. "FB-019"). Shown as the "sources" of the flag. */
+  evidence_ids: string[];
+  /** Optional quote from the input. The backend may omit it and send only evidence_ids. */
+  evidence?: string;
+  /** Optional JSON path in the input (e.g. "$.records[3].comment"). */
+  location?: string;
   explanation: string;
+  /** Optional: the trainee the feedback is about, when the backend knows it. */
+  trainee_id?: string;
   status: FindingStatus;
   reviewed_by_human: boolean;
 }
 
-/** Final output JSON shown to the user (with a copy button). */
+/** One theme score: a number, or the text below when there was not enough feedback to score. */
+export type ThemeScore = number | 'INSUFFICIENT_EVIDENCE';
+
+/** Goal scoring for one trainee. Keys of B_themes are goal codes such as "G05". */
+export interface TraineeGoalScore {
+  trainee_id: string;
+  B_themes: Record<string, ThemeScore>;
+}
+
+/** Final output JSON shown to the user (flag cards, goal scores, and the raw JSON with a copy button). */
 export interface RunResult {
   run_id: string;
   generated_at: string;
@@ -132,6 +152,8 @@ export interface RunResult {
     escalated: number;
   };
   findings: Finding[];
+  /** Optional: the backend may store goal scoring in its own table and not send it here. */
+  goal_scoring?: TraineeGoalScore[];
 }
 
 export interface Run {

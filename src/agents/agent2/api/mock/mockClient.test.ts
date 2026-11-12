@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { MockClient, type KeyValueStore } from './mockClient';
-import { PER_FLAG_MS, QUEUED_MS } from './mockAgent';
+import { PER_FLAG_MS, QUEUED_MS, recordIdFor } from './mockAgent';
 import { bindHost, type HostUser } from '../../host/bridge';
 import { ApiError } from '../types';
 
@@ -127,6 +127,9 @@ describe('runs', () => {
     expect(last.status).toBe('completed');
     expect(last.result?.summary.human_reviewed).toBe(review.review_items.length);
     expect(last.result?.findings.every((f) => f.status !== undefined)).toBe(true);
+    expect(last.result?.findings.every((f) => f.evidence_ids.length > 0)).toBe(true);
+    expect(last.result?.goal_scoring?.length).toBeGreaterThan(0);
+    expect(last.result?.goal_scoring?.[0].B_themes.G12).toBe('INSUFFICIENT_EVIDENCE');
     expect(await api.getResult(run_id)).toEqual(last.result);
 
     await expect(
@@ -151,5 +154,17 @@ describe('runs', () => {
       status: 409,
       code: 'no_enabled_flags',
     });
+  });
+});
+
+describe('recordIdFor', () => {
+  const input = { records: [{ id: 'FB-019', comment: 'x' }, { comment: 'no id' }] };
+
+  it('uses the id of the record a path points into', () => {
+    expect(recordIdFor(input, '$.records[0].comment')).toBe('FB-019');
+  });
+
+  it('falls back to the path of the record when it has no id', () => {
+    expect(recordIdFor(input, '$.records[1].comment')).toBe('$.records[1]');
   });
 });

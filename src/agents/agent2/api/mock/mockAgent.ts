@@ -1,4 +1,13 @@
-import type { Decision, Finding, Flag, ReviewItem, Run, RunResult, FlagProgress } from '../types';
+import type {
+  Decision,
+  Finding,
+  Flag,
+  ReviewItem,
+  Run,
+  RunResult,
+  FlagProgress,
+  TraineeGoalScore,
+} from '../types';
 
 /**
  * MOCK ONLY. Stand-in for the real agent + backend worker. None of this logic belongs in the frontend
@@ -48,6 +57,18 @@ export function collectStrings(value: unknown, path = '$', out: TextHit[] = []):
   return out;
 }
 
+/** The id of the input record a JSON path points into: `$.records[3].comment` -> records[3].id, else `$.records[3]`. */
+export function recordIdFor(payload: unknown, path: string): string {
+  const prefix = path.match(/^.*?\[\d+\]/)?.[0] ?? path;
+  let node: unknown = payload;
+  for (const m of prefix.matchAll(/\.(\w+)|\["([^"]+)"\]|\[(\d+)\]/g)) {
+    const key = m[1] ?? m[2] ?? Number(m[3]);
+    node = (node as Record<string | number, unknown> | null | undefined)?.[key];
+  }
+  const id = (node as { id?: unknown } | null | undefined)?.id;
+  return typeof id === 'string' || typeof id === 'number' ? String(id) : prefix;
+}
+
 export interface PlannedFinding {
   flag_id: string;
   flag_name: string;
@@ -55,8 +76,13 @@ export interface PlannedFinding {
   confidence: number;
   evidence: string;
   location: string;
+  /** Ids of up to 3 input records the finding is based on. The first one is the quoted evidence. */
+  evidence_ids: string[];
+  trainee_id: string;
   explanation: string;
 }
+
+const MOCK_TRAINEES = ['T-03', 'T-07'];
 
 /** Decide up-front (deterministically) what the "agent" will find for each flag. */
 export function planRun(
@@ -65,12 +91,21 @@ export function planRun(
   flags: Pick<Flag, 'id' | 'name' | 'description'>[],
 ): PlannedFinding[] {
   const pool = collectStrings(payload);
+  // Prefer text inside a list (records, comments) over top-level labels such as a dataset name.
+  const inList = pool.filter((p) => p.path.includes('['));
+  const evidencePool = inList.length ? inList : pool;
   const plan: PlannedFinding[] = flags.map((f) => {
     const rng = mulberry32(hash(`${runId}:${f.id}`));
     const raised = pool.length > 0 && rng() < 0.55;
-    const hit = pool.length ? pool[Math.floor(rng() * pool.length)] : { path: '$', text: '' };
+    const hit = pool.length
+      ? evidencePool[Math.floor(rng() * evidencePool.length)]
+      : { path: '$', text: '' };
     const confidence = Math.round((0.35 + rng() * 0.63) * 100) / 100;
     const snippet = hit.text.length > 160 ? `${hit.text.slice(0, 157)}…` : hit.text;
+    const extra = Array.from({ length: Math.floor(rng() * 3) }, () =>
+      pool.length ? evidencePool[Math.floor(rng() * evidencePool.length)] : hit,
+    );
+    const evidence_ids = [...new Set([hit, ...extra].map((h) => recordIdFor(payload, h.path)))];
     return {
       flag_id: f.id,
       flag_name: f.name,
@@ -78,6 +113,8 @@ export function planRun(
       confidence,
       evidence: snippet,
       location: hit.path,
+      evidence_ids,
+      trainee_id: MOCK_TRAINEES[Math.floor(rng() * MOCK_TRAINEES.length)],
       explanation: `The wording here may indicate "${f.name}". ${f.description}`,
     };
   });
@@ -202,6 +239,8 @@ function buildResult(rec: RunRecord, reviewItems: ReviewItem[]): RunResult {
         confidence: p.confidence,
         evidence: p.evidence,
         location: p.location,
+        evidence_ids: p.evidence_ids,
+        trainee_id: p.trainee_id,
         explanation: p.explanation,
         status,
         reviewed_by_human: !!review,
@@ -222,5 +261,24 @@ function buildResult(rec: RunRecord, reviewItems: ReviewItem[]): RunResult {
       escalated: count('escalated'),
     },
     findings,
+    goal_scoring: mockGoalScoring(rec.run_id),
   };
+}
+
+/** Stable fake goal scores for two trainees. G12 is always "not enough evidence", as in the agreed sample output. */
+function mockGoalScoring(runId: string): TraineeGoalScore[] {
+  return MOCK_TRAINEES.map((trainee_id) => {
+    const rng = mulberry32(hash(`${runId}:${trainee_id}`));
+    const score = () => 2 + Math.floor(rng() * 3);
+    return {
+      trainee_id,
+      B_themes: {
+        G05: score(),
+        G06: score(),
+        G07: score(),
+        G11: score(),
+        G12: 'INSUFFICIENT_EVIDENCE' as const,
+      },
+    };
+  });
 }

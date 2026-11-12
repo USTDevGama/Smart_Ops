@@ -66,7 +66,10 @@ export default function User() {
 
       {tab === 'new' && (
         <div className="grid gap-6 lg:grid-cols-2">
-          <section aria-label="Input" className="rounded-md border border-line bg-surface p-5">
+          <section
+            aria-label="Input"
+            className="min-w-0 rounded-md border border-line bg-surface p-5"
+          >
             <h2>Input</h2>
             <p className="mb-4 text-sm text-body">
               Text is split into one record per paragraph; JSON files are checked as given.
@@ -79,7 +82,7 @@ export default function User() {
 
           <section
             aria-label="Output"
-            className="min-h-[24rem] rounded-md border border-line bg-surface p-5"
+            className="min-h-[24rem] min-w-0 rounded-md border border-line bg-surface p-5"
           >
             {activeRunId ? (
               <RunPanel run={active.run} error={active.error} onDecide={active.decide} />
