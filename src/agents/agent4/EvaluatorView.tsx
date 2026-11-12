@@ -72,7 +72,11 @@ function TraineeList({ onOpen }: { onOpen: (traineeId: string) => void }) {
             />
           </div>
           <div className={styles.filter}>
-            <Select label="Status" value={status} onChange={(event) => setStatus(event.target.value)}>
+            <Select
+              label="Status"
+              value={status}
+              onChange={(event) => setStatus(event.target.value)}
+            >
               <option value="">All statuses</option>
               {STATUSES.map((value) => (
                 <option key={value} value={value}>
@@ -113,7 +117,11 @@ function TraineeList({ onOpen }: { onOpen: (traineeId: string) => void }) {
               {shown.map((row) => (
                 <tr key={row.trainee_id}>
                   <td>
-                    <button type="button" className={styles.rowButton} onClick={() => onOpen(row.trainee_id)}>
+                    <button
+                      type="button"
+                      className={styles.rowButton}
+                      onClick={() => onOpen(row.trainee_id)}
+                    >
                       {row.trainee_id}
                     </button>
                   </td>
