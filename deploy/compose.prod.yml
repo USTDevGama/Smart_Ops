@@ -1,0 +1,43 @@
+# Production stack for the common Smart Ops dashboard (MyCloud VM).
+# Own Compose project and default network, plus the external shared-services network (must already exist on the VM).
+# Run via the deploy job, or by hand:
+#   IMAGE_TAG=<short-sha> docker compose -f deploy/compose.prod.yml --env-file /data/apps/smart-ops-dashboard/.env up -d --wait
+name: smart-ops-dashboard
+
+services:
+  dashboard:
+    image: smart-ops-dashboard:${IMAGE_TAG:?set IMAGE_TAG to the short git SHA}
+    container_name: smart-ops-dashboard
+    restart: unless-stopped
+    networks: [default, shared-services]
+    ports:
+      # Host port from the server .env -> nginx's internal port 8080 (nginx runs as non-root and cannot bind 80).
+      - '${DASHBOARD_PORT:?set DASHBOARD_PORT in the server .env}:8080'
+    environment:
+      # Smart_Ops_Pod3 backend, reachable from the container. Proxied at /agent3-api.
+      AGENT3_API_URL: ${AGENT3_API_URL:?set AGENT3_API_URL in the server .env}
+      # Pod 4 API (agent 4), reached through the Pod 4 UI port, e.g. http://<pod4-host>:<UI_PORT>.
+      # Optional so existing deploys keep working: until it is set, agent 4 calls get a 502.
+      AGENT4_API_URL: ${AGENT4_API_URL:-http://127.0.0.1:9}
+    extra_hosts:
+      # Lets the container reach services published on the VM host (e.g. http://host.docker.internal:8000).
+      - 'host.docker.internal:host-gateway'
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '-O', '/dev/null', 'http://127.0.0.1:8080/healthz']
+      interval: 15s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '3'
+
+networks:
+  shared-services:
+    external: true

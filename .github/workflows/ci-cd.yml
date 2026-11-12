@@ -1,0 +1,171 @@
+name: CI/CD
+
+# PRs: validate and build only (never deploy).
+# Push to main: validate, build, deploy. No other branch can deploy (no workflow_dispatch either).
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-cd-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+env:
+  IMAGE_NAME: smart-ops-dashboard
+  # Server-side config. Lives outside the runner workspace, so workspace cleanup never removes it.
+  APP_DIR: /data/apps/smart-ops-dashboard
+
+jobs:
+  ci:
+    name: Build and test
+    # Dedicated label so this never lands on the Pod C / Pod D runners.
+    runs-on: [self-hosted, linux, common-ui]
+    timeout-minutes: 20
+    outputs:
+      tag: ${{ steps.vars.outputs.tag }}
+    steps:
+      # Native git checkout: codeload.github.com is blocked on MyCloud, so no actions/checkout.
+      # Cleans the workspace first, fetches exactly GITHUB_SHA, and cleans again after.
+      - name: Checkout exact commit (native git)
+        env:
+          GIT_TERMINAL_PROMPT: '0'
+          GH_TOKEN: ${{ github.token }}
+          REPO_URL: ${{ github.server_url }}/${{ github.repository }}.git
+        run: |
+          git --version
+          cd "$GITHUB_WORKSPACE"
+          [ -d .git ] || git init -q .
+          if git remote get-url origin > /dev/null 2>&1; then
+            git remote set-url origin "$REPO_URL"
+          else
+            git remote add origin "$REPO_URL"
+          fi
+          git reset -q --hard 2> /dev/null || true
+          git clean -ffdxq
+          auth=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)
+          echo "::add-mask::$auth"
+          # Token passed via environment git config, not argv, so it is not visible in `ps`.
+          export GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=http.extraheader GIT_CONFIG_VALUE_0="Authorization: basic $auth"
+          git fetch --no-tags --depth=1 origin "$GITHUB_SHA"
+          git checkout -q --force --detach FETCH_HEAD
+          git clean -ffdxq
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA" || { echo "::error::checked out $(git rev-parse HEAD), expected $GITHUB_SHA"; exit 1; }
+          git log -1 --oneline
+
+      - name: Tool versions
+        run: |
+          git --version
+          node --version
+          npm --version
+          docker --version
+          docker compose version
+          node -e 'process.exit(Number(process.versions.node.split(".")[0]) >= 18 ? 0 : 1)' || { echo "::error::Node 18+ required on the runner"; exit 1; }
+
+      - run: npm ci --no-audit --no-fund
+      - run: npm run format:check
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+        env:
+          VITE_USE_MOCKS: 'false'
+
+      # Exactly 7 characters of the commit SHA.
+      - name: Compute short SHA tag
+        id: vars
+        run: echo "tag=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      # The image stays in the runner's local Docker daemon (no registry); the deploy job
+      # runs on the same runner and uses it. Tagged by SHA only, never `latest`.
+      - name: Build Docker image
+        run: docker build --build-arg VITE_USE_MOCKS=false -t "$IMAGE_NAME:${{ steps.vars.outputs.tag }}" .
+
+  deploy:
+    name: Deploy to MyCloud
+    needs: ci
+    # Defence in depth: only a push to main may deploy.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: [self-hosted, linux, common-ui]
+    timeout-minutes: 10
+    environment: production
+    concurrency:
+      group: deploy-smart-ops-dashboard
+      cancel-in-progress: false
+    env:
+      IMAGE_TAG: ${{ needs.ci.outputs.tag }}
+      COMPOSE_PROJECT_NAME: smart-ops-dashboard
+    steps:
+      # Native git checkout: codeload.github.com is blocked on MyCloud, so no actions/checkout.
+      # Cleans the workspace first, fetches exactly GITHUB_SHA, and cleans again after.
+      - name: Checkout exact commit (native git)
+        env:
+          GIT_TERMINAL_PROMPT: '0'
+          GH_TOKEN: ${{ github.token }}
+          REPO_URL: ${{ github.server_url }}/${{ github.repository }}.git
+        run: |
+          git --version
+          cd "$GITHUB_WORKSPACE"
+          [ -d .git ] || git init -q .
+          if git remote get-url origin > /dev/null 2>&1; then
+            git remote set-url origin "$REPO_URL"
+          else
+            git remote add origin "$REPO_URL"
+          fi
+          git reset -q --hard 2> /dev/null || true
+          git clean -ffdxq
+          auth=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)
+          echo "::add-mask::$auth"
+          # Token passed via environment git config, not argv, so it is not visible in `ps`.
+          export GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=http.extraheader GIT_CONFIG_VALUE_0="Authorization: basic $auth"
+          git fetch --no-tags --depth=1 origin "$GITHUB_SHA"
+          git checkout -q --force --detach FETCH_HEAD
+          git clean -ffdxq
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA" || { echo "::error::checked out $(git rev-parse HEAD), expected $GITHUB_SHA"; exit 1; }
+          git log -1 --oneline
+
+      - name: Tool versions
+        run: |
+          git --version
+          docker --version
+          docker compose version
+
+      - name: Check tag and server config
+        run: |
+          [[ "$IMAGE_TAG" =~ ^[0-9a-f]{7}$ ]] || { echo "::error::IMAGE_TAG must be a 7-char SHA, got '$IMAGE_TAG'"; exit 1; }
+          test -f "$APP_DIR/.env" || { echo "::error::Missing $APP_DIR/.env (see deploy/.env.example)"; exit 1; }
+          docker image inspect "$IMAGE_NAME:$IMAGE_TAG" > /dev/null
+
+      - name: Deploy with compose.prod.yml
+        run: |
+          docker compose -f deploy/compose.prod.yml --env-file "$APP_DIR/.env" \
+            up -d --force-recreate --remove-orphans --wait --wait-timeout 90
+
+      - name: Verify health
+        run: |
+          addr=$(docker compose -f deploy/compose.prod.yml --env-file "$APP_DIR/.env" port dashboard 8080)
+          port="${addr##*:}"
+          for i in $(seq 1 12); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:$port/healthz" || true)
+            if [ "$code" = "200" ]; then
+              echo "healthy: HTTP 200 on port $port (image $IMAGE_NAME:$IMAGE_TAG)"
+              exit 0
+            fi
+            echo "attempt $i: HTTP $code"
+            sleep 5
+          done
+          echo "::error::Health check failed"
+          exit 1
+
+      - name: Show logs on failure
+        if: failure()
+        run: docker compose -f deploy/compose.prod.yml --env-file "$APP_DIR/.env" logs --tail 100 dashboard || true
+
+      # Dangling images carrying this app's label only. Never `system prune`, never other pods' images.
+      # Older SHA-tagged images are kept for manual rollback.
+      - name: Remove dangling dashboard images
+        if: success()
+        run: docker image prune -f --filter "label=app=smart-ops-dashboard"

@@ -1,12 +1,13 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 import { devHeaders, loadDevUser, saveDevUser } from './devAuth';
+import { AUTH_ENABLED, localUser } from './authMode';
 import type { AuthProviderApi, Role, User } from './types';
 
 const AuthContext = createContext<AuthProviderApi | null>(null);
 
 /** Dev-login implementation. Replace with a Zitadel-backed one later (docs/auth-zitadel.md). */
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(() => loadDevUser());
+  const [user, setUser] = useState<User | null>(() => (AUTH_ENABLED ? loadDevUser() : localUser()));
 
   const login = useCallback((name: string, role: Role) => {
     const next = { name: name.trim(), role };
@@ -14,7 +15,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(next);
   }, []);
 
+  // With sign-in off there is no login to return to, so sign out does nothing.
   const logout = useCallback(() => {
+    if (!AUTH_ENABLED) return;
     saveDevUser(null);
     setUser(null);
   }, []);

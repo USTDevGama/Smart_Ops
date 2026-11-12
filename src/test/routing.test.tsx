@@ -45,7 +45,12 @@ describe('login and routing', () => {
     renderAt('/login');
     await signIn('Trainee');
     expect(await screen.findByRole('heading', { name: 'Choose an agent' })).toBeInTheDocument();
-    for (const name of ['Agent 1', 'Bias Flagging Agent', 'Stakeholder Roleplay', 'Agent 4']) {
+    for (const name of [
+      'Agent 1',
+      'Bias Flagging Agent',
+      'Stakeholder Roleplay',
+      'Adaptive Skill-Gap Diagnostic Agent',
+    ]) {
       expect(screen.getByRole('button', { name: new RegExp(name) })).toBeInTheDocument();
     }
   });
@@ -88,7 +93,8 @@ describe('role separation in agent 3', () => {
   it('signs out', async () => {
     renderAt('/login');
     await signIn('Trainee');
-    await userEvent.click(await screen.findByRole('button', { name: 'Sign out' }));
+    await userEvent.click(await screen.findByRole('button', { name: /Account menu/ }));
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Sign out' }));
     expect(await screen.findByRole('heading', { name: 'Sign in' })).toBeInTheDocument();
   });
 });

@@ -1,0 +1,58 @@
+# Rendered by the nginx image entrypoint (envsubst). Only ${AGENT3_API_URL} is substituted;
+# nginx's own $variables are left alone.
+server {
+    listen 8080;
+    server_name _;
+
+    root /usr/share/nginx/html;
+    index index.html;
+
+    gzip on;
+    gzip_types text/plain text/css application/javascript application/json image/svg+xml;
+
+    # Lightweight liveness endpoint used by Docker and the deploy job.
+    location = /healthz {
+        access_log off;
+        default_type text/plain;
+        return 200 "ok\n";
+    }
+
+    # Smart_Ops_Pod3 FastAPI. The backend has no CORS, so it is served same-origin here
+    # (the production equivalent of the Vite dev proxy). The prefix is stripped.
+    location /agent3-api/ {
+        proxy_pass ${AGENT3_API_URL}/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 300s;
+        client_max_body_size 25m;
+    }
+
+    # Pod 4 API (agent 4, ASGD). Served same-origin like agent 3. The prefix is stripped, so
+    # /agent4-api/v1/trainees reaches the Pod 4 UI address as /v1/trainees. Without this block,
+    # the SPA fallback below returns index.html and the screen shows a JSON parse error.
+    location /agent4-api/ {
+        proxy_pass ${AGENT4_API_URL}/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 300s;
+        client_max_body_size 1m;
+    }
+
+    # Hashed build assets never change: cache hard.
+    location /assets/ {
+        add_header Cache-Control "public, max-age=31536000, immutable";
+        try_files $uri =404;
+    }
+
+    # SPA fallback: unknown paths serve index.html so client-side routes work on refresh.
+    location / {
+        add_header Cache-Control "no-cache";
+        try_files $uri $uri/ /index.html;
+    }
+}

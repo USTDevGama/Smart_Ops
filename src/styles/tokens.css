@@ -157,6 +157,12 @@
 
   --color-ai-accent: #881e87; /* Smart Genie / AI features */
 
+  /* Top bar colours, taken from the Pod 4 screen (ui/src/styles.css). */
+  --color-header-border: #d4e8e8;
+  --color-brand-title: #1a8a8a;
+  --color-avatar-bg: #e6f3f6;
+  --color-avatar-text: #0097ac;
+
   /* ── Typography: system font stack (Roboto in Figma is not bundled; decision recorded in docs/ui-standards.md) ── */
   --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Consolas, 'Liberation Mono', monospace;
