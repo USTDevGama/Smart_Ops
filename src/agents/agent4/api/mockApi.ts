@@ -54,12 +54,18 @@ const store = new Map<string, StoredRun>([
 ]);
 let runCounter = 100;
 
+// Every trainee in the trainee database, as the real list returns them. T-12 has no run yet.
+const TRAINEE_DB = ['T-06', 'T-09', 'T-12'];
+
 function rowsOf(): TraineeRow[] {
-  return [...store.entries()].map(([trainee_id, record]) => ({
-    trainee_id,
-    status: record.status,
-    last_run_at: '2026-11-01T09:00:00Z',
-  }));
+  return TRAINEE_DB.map((trainee_id) => {
+    const record = store.get(trainee_id);
+    return {
+      trainee_id,
+      status: record?.status ?? null,
+      last_run_at: record ? '2026-11-01T09:00:00Z' : null,
+    };
+  });
 }
 
 export function createMockApi(): Agent4Api {
