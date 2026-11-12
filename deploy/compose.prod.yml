@@ -15,6 +15,9 @@ services:
     environment:
       # Smart_Ops_Pod3 backend, reachable from the container. Proxied at /agent3-api.
       AGENT3_API_URL: ${AGENT3_API_URL:?set AGENT3_API_URL in the server .env}
+      # Pod 4 API (agent 4), reached through the Pod 4 UI port, e.g. http://<pod4-host>:<UI_PORT>.
+      # Optional so existing deploys keep working: until it is set, agent 4 calls get a 502.
+      AGENT4_API_URL: ${AGENT4_API_URL:-http://127.0.0.1:9}
     extra_hosts:
       # Lets the container reach services published on the VM host (e.g. http://host.docker.internal:8000).
       - 'host.docker.internal:host-gateway'

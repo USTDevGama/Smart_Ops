@@ -32,6 +32,13 @@ export function createHttpApi(getAuthHeaders: () => Record<string, string>): Age
     } catch {
       throw new ApiError(0, 'The agent service could not be reached.');
     }
+    // A page of HTML here means the server did not route /agent4-api to the API.
+    if (response.ok && !response.headers.get('content-type')?.includes('application/json')) {
+      throw new ApiError(
+        response.status,
+        'The agent API did not return data. The server must route /agent4-api to the Pod 4 API.',
+      );
+    }
     if (!response.ok) {
       let body: unknown = null;
       try {

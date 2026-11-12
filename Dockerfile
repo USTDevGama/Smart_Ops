@@ -17,7 +17,7 @@ FROM nginx:1.27-alpine
 # so AGENT3_API_URL is set at runtime (server .env), not baked into the image.
 # The filter limits substitution to that one variable, so nginx's own $host, $uri,
 # $remote_addr etc. are never touched. Output goes to /etc/nginx/conf.d/default.conf.
-ENV NGINX_ENVSUBST_FILTER=AGENT3_API_URL
+ENV NGINX_ENVSUBST_FILTER='AGENT[34]_API_URL'
 # Lets the deploy job prune only this app's dangling images, never another pod's.
 LABEL app=smart-ops-dashboard
 COPY deploy/nginx.conf.template /etc/nginx/templates/default.conf.template
