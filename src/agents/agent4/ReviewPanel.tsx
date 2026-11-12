@@ -48,7 +48,9 @@ export function ReviewPanel({
   return (
     <section className={styles.review} aria-labelledby="review-heading">
       <h3 id="review-heading">Reviewer decision</h3>
-      <p className={styles.meta}>A person must decide. The plan is not shared until it is approved.</p>
+      <p className={styles.meta}>
+        A person must decide. The plan is not shared until it is approved.
+      </p>
       <fieldset className={styles.fieldset}>
         <legend>Decision</legend>
         <label className={styles.choice}>

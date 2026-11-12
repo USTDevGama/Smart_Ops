@@ -153,7 +153,9 @@ function ScoreRowView({ row, threshold }: { row: ScoreRow; threshold: number }) 
     <div className={styles.scoreRow}>
       <div className={styles.goal}>
         {row.goal} {row.label}
-        <div className={styles.small}>{row.sources.length ? row.sources.join('; ') : 'No evidence yet'}</div>
+        <div className={styles.small}>
+          {row.sources.length ? row.sources.join('; ') : 'No evidence yet'}
+        </div>
       </div>
       {row.score === null ? (
         <div className={styles.small}>Not assessed</div>

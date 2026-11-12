@@ -7,9 +7,7 @@ const AuthContext = createContext<AuthProviderApi | null>(null);
 
 /** Dev-login implementation. Replace with a Zitadel-backed one later (docs/auth-zitadel.md). */
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(() =>
-    AUTH_ENABLED ? loadDevUser() : localUser(),
-  );
+  const [user, setUser] = useState<User | null>(() => (AUTH_ENABLED ? loadDevUser() : localUser()));
 
   const login = useCallback((name: string, role: Role) => {
     const next = { name: name.trim(), role };
