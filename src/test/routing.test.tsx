@@ -47,7 +47,7 @@ describe('login and routing', () => {
     expect(await screen.findByRole('heading', { name: 'Choose an agent' })).toBeInTheDocument();
     for (const name of [
       'Agent 1',
-      'Agent 2',
+      'Bias Flagging Agent',
       'Stakeholder Roleplay',
       'Adaptive Skill-Gap Diagnostic Agent',
     ]) {

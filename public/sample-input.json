@@ -1,0 +1,40 @@
+{
+  "dataset": "performance-review-comments-sample",
+  "records": [
+    {
+      "id": "R-001",
+      "reviewer": "manager_a",
+      "comment": "He is a natural leader, but she tends to get emotional in meetings and should be coached on staying calm."
+    },
+    {
+      "id": "R-002",
+      "reviewer": "manager_b",
+      "comment": "At his age it is hard to expect him to pick up the new tooling; a younger digital native would adapt faster."
+    },
+    {
+      "id": "R-003",
+      "reviewer": "manager_c",
+      "comment": "Great delivery this quarter. Handles ambiguity well and mentors junior colleagues."
+    },
+    {
+      "id": "R-004",
+      "reviewer": "manager_a",
+      "comment": "With two small kids at home, I assumed she would not want the on-call rotation, so I did not offer it."
+    },
+    {
+      "id": "R-005",
+      "reviewer": "manager_d",
+      "comment": "His accent makes client calls difficult; we should staff someone who sounds more local."
+    },
+    {
+      "id": "R-006",
+      "reviewer": "manager_b",
+      "comment": "Seems to be from a rough background, so polish in executive settings will take time."
+    },
+    {
+      "id": "R-007",
+      "reviewer": "manager_e",
+      "comment": "Needs to dress more professionally and watch his weight if he wants to be client-facing."
+    }
+  ]
+}
