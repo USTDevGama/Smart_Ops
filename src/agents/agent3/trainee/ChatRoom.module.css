@@ -1,0 +1,94 @@
+.room {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-md);
+}
+.titleRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+.stats {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+.mood {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+.count {
+  white-space: nowrap;
+}
+
+/* The conversation scrolls inside its own box, so the composer stays put. */
+.log {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  height: min(56vh, 520px);
+  min-height: 240px;
+  overflow-y: auto;
+  padding: var(--space-4);
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-md);
+}
+.typing {
+  align-self: flex-start;
+}
+
+.pending {
+  align-self: flex-end;
+  max-width: 80%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-1);
+}
+.pendingLabel {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  color: var(--color-text-heading);
+}
+.pendingBubble {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--warning-mid);
+  border-radius: var(--radius-md);
+  background: var(--warning-subtle);
+  color: var(--color-text-heading);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.composer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-md);
+}
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}

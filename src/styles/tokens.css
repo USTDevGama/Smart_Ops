@@ -1,0 +1,174 @@
+/* Design tokens — source: Figma "Colors" and "Color usage" frames.
+   Drop-in global stylesheet. Import once at the app root. */
+:root {
+  /* ── Primary: Dark Teal (DTE). Brand base = 500 ── */
+  --dte-950: #000608;
+  --dte-900: #000c10;
+  --dte-850: #001218;
+  --dte-800: #001820;
+  --dte-750: #001e28;
+  --dte-700: #002431;
+  --dte-650: #002a39;
+  --dte-600: #003041;
+  --dte-550: #003649;
+  --dte-500: #003c51;
+  --dte-450: #1a5063;
+  --dte-400: #336374;
+  --dte-350: #4d7786;
+  --dte-300: #668a97;
+  --dte-250: #809ea8;
+  --dte-200: #99b1b9;
+  --dte-150: #b3c5cb;
+  --dte-100: #ccd8dc;
+  --dte-50: #e6ecee;
+
+  /* ── Primary: Teal (TEA). Brand base = 500 ── */
+  --tea-950: #000f11;
+  --tea-900: #001e22;
+  --tea-850: #002d33;
+  --tea-800: #003c45;
+  --tea-750: #004b55;
+  --tea-700: #005b67;
+  --tea-650: #006a78;
+  --tea-600: #00798a;
+  --tea-550: #00899b;
+  --tea-500: #0097ac;
+  --tea-450: #1aa2b5;
+  --tea-400: #33acbd;
+  --tea-350: #4db7c5;
+  --tea-300: #66c1cd;
+  --tea-250: #80cbd5;
+  --tea-200: #99d5de;
+  --tea-150: #b3e0e6;
+  --tea-100: #cceaee;
+  --tea-50: #e6f5f7;
+  --tea-5: #f0f9fa;
+
+  --white: #ffffff;
+
+  /* ── Neutrals (NEU) ── */
+  --neu-1000: #0e1e3a;
+  --neu-950: #1a2944;
+  --neu-900: #27354e;
+  --neu-850: #324057;
+  --neu-800: #3e4b61;
+  --neu-750: #4b576c;
+  --neu-700: #576276;
+  --neu-650: #626d7f;
+  --neu-600: #6e7889;
+  --neu-550: #7b8493;
+  --neu-500: #878f9d;
+  --neu-450: #9299a6;
+  --neu-400: #9fa5b0;
+  --neu-350: #abb0ba;
+  --neu-300: #b7bcc4;
+  --neu-250: #c3c7ce;
+  --neu-200: #cfd2d8;
+  --neu-150: #dbdde2;
+  --neu-100: #e7e9ec;
+  --neu-50: #f3f4f5;
+
+  /* ── Surfaces / light backgrounds (SUR) ── */
+  --sur-1000: #e7e9ec;
+  --sur-800: #eff0f2;
+  --sur-600: #f3f4f5;
+  --sur-400: #f5f6f7;
+  --sur-200: #fafafb;
+
+  /* ── Secondary: Orange/Coral (ORA) ── */
+  --ora-1000: #3f1b16;
+  --ora-900: #642a23;
+  --ora-800: #8b3a31;
+  --ora-700: #b04a3e;
+  --ora-600: #d75a4c;
+  --ora-500: #fc6a59;
+  --ora-400: #fd8072;
+  --ora-300: #fd968a;
+  --ora-200: #fdada4;
+  --ora-100: #fec3bd;
+  --ora-50: #fedad5;
+  --ora-0: #fff0ef;
+
+  /* ── Secondary: Purple (PUR) ── */
+  --pur-1000: #220822;
+  --pur-900: #360c36;
+  --pur-800: #4b114a;
+  --pur-700: #5f155e;
+  --pur-600: #741a73;
+  --pur-500: #881e87;
+  --pur-400: #9a4099;
+  --pur-300: #ac62ab;
+  --pur-200: #be84bd;
+  --pur-100: #cfa5cf;
+  --pur-50: #e1c7e1;
+  --pur-0: #f3e9f3;
+
+  /* ── Secondary: Green (GRE) ── */
+  --gre-1000: #002d1f;
+  --gre-900: #004731;
+  --gre-800: #016244;
+  --gre-700: #017c57;
+  --gre-600: #01986a;
+  --gre-500: #01b27c;
+  --gre-400: #27be90;
+  --gre-300: #4ec9a4;
+  --gre-200: #74d5b7;
+  --gre-100: #99e0ca;
+  --gre-50: #bfecde;
+  --gre-0: #e6f7f2;
+
+  /* ── Semantic status ── */
+  --success-strong: #008540;
+  --success-mid: #83e2a7;
+  --success-subtle: #c2efd9;
+  --error-strong: #cf2f29;
+  --error-mid: #fca8a8;
+  --error-subtle: #f9d3d3;
+  --error-faint: #fcefee;
+  --warning-strong: #fa8500;
+  --warning-mid: #febf76;
+  --warning-subtle: #f8eece;
+  --info-strong: #0071eb;
+  --info-mid: #a8d9ff;
+  --info-subtle: #d6edff;
+  --neutral-strong: #757575;
+  --neutral-mid: #c1c1c1;
+  --neutral-subtle: #e3e3e3;
+
+  /* ═════════ Semantic aliases — USE THESE IN COMPONENTS ═════════ */
+  --color-text-heading: #0e1e3a; /* headings, titles, dark body copy */
+  --color-text-body: #4b576c; /* normal body copy */
+  --color-text-link: #00798a; /* links (always underlined) */
+  --color-text-on-primary: #ffffff;
+  --color-bg-page: #f5f6f7;
+  --color-bg-surface: #ffffff;
+
+  --color-btn-primary-bg: #003c51;
+  --color-btn-primary-bg-hover: #00798a;
+  --color-btn-primary-text: #ffffff;
+  --color-btn-secondary-bg: transparent;
+  --color-btn-secondary-bg-hover: #e7e9ec;
+  --color-btn-secondary-text: #0e1e3a;
+
+  --color-highlight-bg: #e6f5f7; /* hover / selected background */
+  --color-highlight-border: #4db7c5; /* border paired with highlight bg */
+  --color-border-accent: #0097ac; /* border-only emphasis (focus, active outline) */
+  --color-border-default: #cfd2d8; /* INFERRED — confirm with design */
+
+  --color-ai-accent: #881e87; /* Smart Genie / AI features */
+
+  /* ── Typography: system font stack (Roboto in Figma is not bundled; decision recorded in docs/ui-standards.md) ── */
+  --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Consolas, 'Liberation Mono', monospace;
+
+  /* ── Radius / spacing (INFERRED from swatch + icon geometry) ── */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+}

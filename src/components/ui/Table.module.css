@@ -1,0 +1,27 @@
+.wrap {
+  overflow-x: auto;
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-md);
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.table th,
+.table td {
+  padding: var(--space-2) var(--space-3);
+  text-align: left;
+  border-bottom: 1px solid var(--neu-100);
+}
+.table th {
+  color: var(--color-text-heading);
+  font-weight: 500;
+  background: var(--sur-200);
+}
+.table tbody tr:hover {
+  background: var(--color-highlight-bg);
+}
+.table tbody tr:last-child td {
+  border-bottom: 0;
+}

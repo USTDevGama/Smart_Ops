@@ -1,0 +1,26 @@
+/* Same underline style as Tabs, so page navigation and in-page tabs look alike. */
+.nav {
+  display: flex;
+  gap: var(--space-1);
+  flex-wrap: wrap; /* wrap on narrow screens; overflow would add a scrollbar (the tabs overlap the border) */
+  border-bottom: 1px solid var(--color-border-default);
+}
+.item {
+  margin-bottom: -1px;
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 2px solid transparent;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  color: var(--color-text-body);
+  font: 500 14px/20px var(--font-sans);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.item:hover {
+  color: var(--color-text-heading);
+  background: var(--color-highlight-bg);
+}
+.active,
+.active:hover {
+  color: var(--color-text-heading);
+  border-bottom-color: var(--color-border-accent);
+}

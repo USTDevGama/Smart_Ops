@@ -1,0 +1,18 @@
+# Replace the placeholders with real GitHub teams or users.
+# A team edits only its own folder. Shared code needs the shared owners.
+
+/src/agents/agent1/      @your-org/team-1
+/src/agents/agent2/      @your-org/team-2
+/src/agents/agent3/      @your-org/team-3
+/src/agents/agent4/      @your-org/team-4
+
+# Shared code: review by the platform owners.
+/src/components/ui/      @your-org/ui-platform
+/src/auth/               @your-org/ui-platform
+/src/shell/              @your-org/ui-platform
+/src/home/               @your-org/ui-platform
+/src/styles/             @your-org/ui-platform
+/src/agents/registry.ts  @your-org/ui-platform
+/src/agents/types.ts     @your-org/ui-platform
+/eslint.config.js        @your-org/ui-platform
+/docs/                   @your-org/ui-platform
