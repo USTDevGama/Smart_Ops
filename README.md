@@ -57,7 +57,8 @@ src/
   assets/icons/    icons from the design kit
   agents/
     registry.ts    the list of agents (the only file the shell reads)
-    agent1/ agent2/ agent4/   placeholders for the other teams
+    agent1/ agent4/           placeholders for the other teams
+    agent2/        Bias Flagging Agent (Pod2, runs on mock data for now)
     agent3/        Stakeholder Roleplay (Pod3)
     _template/     copy this to start a new agent
 e2e/               Playwright browser tests

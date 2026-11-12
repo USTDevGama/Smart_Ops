@@ -14,6 +14,9 @@ services:
       # Host port from the server .env -> nginx's internal port 8080 (nginx runs as non-root and cannot bind 80).
       - '${DASHBOARD_PORT:?set DASHBOARD_PORT in the server .env}:8080'
     environment:
+      # Pod 2 API (agent 2, Bias Flagging), e.g. http://<pod2-host>:<port>. Proxied at /agent2-api.
+      # Optional so existing deploys keep working: until it is set, agent 2 calls get a 502.
+      AGENT2_API_URL: ${AGENT2_API_URL:-http://127.0.0.1:9}
       # Smart_Ops_Pod3 backend, reachable from the container. Proxied at /agent3-api.
       AGENT3_API_URL: ${AGENT3_API_URL:?set AGENT3_API_URL in the server .env}
       # Pod 4 API (agent 4), reached through the Pod 4 UI port, e.g. http://<pod4-host>:<UI_PORT>.

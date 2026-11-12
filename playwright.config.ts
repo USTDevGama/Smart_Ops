@@ -1,7 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
 // Two browser-test projects, each on its own dev server so they never depend on .env.local:
-//  - mock: Agent 3 on in-browser mock data. Needs nothing else.
+//  - mock: Agents 2 and 3 on in-browser mock data. Needs nothing else.
 //  - real: Agent 3 against the real Smart_Ops_Pod3 API on :8000 (see docs/agent3-api-and-mocks.md).
 //          Skipped automatically when the backend is not running.
 const MOCK_PORT = 5180;
@@ -15,7 +15,7 @@ export default defineConfig({
   projects: [
     {
       name: 'mock',
-      testMatch: /chat\.spec\.ts/,
+      testMatch: /(chat|agent2)\.spec\.ts/,
       use: { ...devices['Desktop Chrome'], baseURL: `http://localhost:${MOCK_PORT}` },
     },
     {
