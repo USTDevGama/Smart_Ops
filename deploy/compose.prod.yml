@@ -1,5 +1,5 @@
 # Production stack for the common Smart Ops dashboard (MyCloud VM).
-# Own Compose project and network; not attached to shared-services (the dashboard has no database).
+# Own Compose project and default network, plus the external shared-services network (must already exist on the VM).
 # Run via the deploy job, or by hand:
 #   IMAGE_TAG=<short-sha> docker compose -f deploy/compose.prod.yml --env-file /data/apps/smart-ops-dashboard/.env up -d --wait
 name: smart-ops-dashboard
@@ -9,6 +9,7 @@ services:
     image: smart-ops-dashboard:${IMAGE_TAG:?set IMAGE_TAG to the short git SHA}
     container_name: smart-ops-dashboard
     restart: unless-stopped
+    networks: [default, shared-services]
     ports:
       # Host port from the server .env -> nginx's internal port 8080 (nginx runs as non-root and cannot bind 80).
       - '${DASHBOARD_PORT:?set DASHBOARD_PORT in the server .env}:8080'
@@ -36,3 +37,7 @@ services:
       options:
         max-size: '10m'
         max-file: '3'
+
+networks:
+  shared-services:
+    external: true
