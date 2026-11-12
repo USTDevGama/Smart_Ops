@@ -13,8 +13,10 @@ delete, and activate or deactivate each one. The two pages are strictly separate
 
 ## Run
 
-- Mock data (no backend): `VITE_USE_MOCKS=true npm run dev`, sign in, open the card. This is the same switch as Agents 3 and 4.
-- Real backend (the default, and what the production image uses): the UI calls `/agent2-api/api/v1/...`. In development the Vite
+- Mock data (no backend) is the default: `npm run dev`, sign in, open the card. The production image is mock too, for now:
+  the `Dockerfile` sets `VITE_AGENT2_USE_MOCKS=true`. Agent 2 has its own switch because the shared `VITE_USE_MOCKS` is `false` in
+  production for the live Agents 3 and 4.
+- Real backend: `VITE_AGENT2_USE_MOCKS=false npm run dev` (or set that line to `false` in the `Dockerfile` for the server). The UI calls `/agent2-api/api/v1/...`. In development the Vite
   dev server proxies `/agent2-api` to `VITE_AGENT2_API_URL` (default `http://localhost:8001`, so it does not clash with the Agent 3
   backend on 8000). In production nginx does it, using `AGENT2_API_URL` from the server `.env`.
   Start the backend from `Smart_Ops_Pod2/backend` with `uvicorn app.main:create_app --factory --port 8001`.
@@ -39,9 +41,9 @@ to this folder (see its `content` setting) and its reset is off.
 
 ## Before the demo: remove the mock parts
 
-Mock data only runs when `VITE_USE_MOCKS=true` (the browser tests set it). Before the demo:
+Mock data runs unless `VITE_AGENT2_USE_MOCKS=false` (the `Dockerfile` currently sets it to `true`). Before the demo:
 
 - Remove `api/mock/` (including `mockClient.test.ts` and `seed.ts`) and the mock branch in `api/client.ts`; make the real HTTP client the only one.
-- Remove the `VITE_USE_MOCKS` check in `api/client.ts` and the "Running on mock data" banner in `index.tsx`.
+- Remove the `VITE_AGENT2_USE_MOCKS` check in `api/client.ts` and the `Dockerfile` lines for it and the "Running on mock data" banner in `index.tsx`.
 - Remove the mock-only paths in `e2e/agent2.spec.ts` (or point it at the real backend).
 - The backend does not yet accept the portal's login (see `MIGRATION.md`, open questions). Fix that first.

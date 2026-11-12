@@ -9,6 +9,9 @@ COPY . .
 # VITE_* values are bundled into the browser (public). Production talks to the real API.
 ARG VITE_USE_MOCKS=false
 ENV VITE_USE_MOCKS=$VITE_USE_MOCKS
+# Agent 2 (Bias Flagging) runs on mock data until the Pod 2 backend is connected. Then set this to false.
+ARG VITE_AGENT2_USE_MOCKS=true
+ENV VITE_AGENT2_USE_MOCKS=$VITE_AGENT2_USE_MOCKS
 RUN npm run build
 
 # ---- runtime: nginx serves the static files and proxies /agent2-api, /agent3-api and /agent4-api ----

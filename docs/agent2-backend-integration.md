@@ -110,13 +110,15 @@ The matching update to `Smart_Ops_Pod2/contracts/ui_api.openapi.yaml` is **not d
 
 ## Mock data and live data
 
-| Where                             | Behaviour                                                                              |
-| --------------------------------- | -------------------------------------------------------------------------------------- |
-| Deployed dashboard                | Built with `VITE_USE_MOCKS=false` (Dockerfile), so Agent 2 is **live**                 |
-| `npm run dev` with no env         | **Live**: calls `/agent2-api`, which the dev server proxies to `http://localhost:8001` |
-| `VITE_USE_MOCKS=true npm run dev` | Mock data in the browser, no backend. A blue "Running on mock data" banner shows       |
+| Where                                     | Behaviour                                                                                                        |
+| ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Deployed dashboard                        | **Mock** for now: the `Dockerfile` sets `VITE_AGENT2_USE_MOCKS=true`. A blue "Running on mock data" banner shows |
+| `npm run dev` with no env                 | **Mock**, no backend needed                                                                                      |
+| `VITE_AGENT2_USE_MOCKS=false npm run dev` | **Live**: calls `/agent2-api`, which the dev server proxies to `http://localhost:8001`                           |
 
-This is the same switch Agents 3 and 4 use. Agent 2 used to default to mock; it no longer does.
+Agent 2 has its own switch. The shared `VITE_USE_MOCKS` is `false` in the production image because Agents 3 and 4 are live, so it can't be used for Agent 2.
+
+**To go live on the server** once the backend is ready: set `AGENT2_API_URL` in the server `.env`, change `ARG VITE_AGENT2_USE_MOCKS=true` to `false` in the `Dockerfile`, merge, and redeploy.
 
 **Before the demo, remove the mock parts** (they are listed in `src/agents/agent2/README.md`, "Before the demo"): `api/mock/`, the mock branch in `api/client.ts`, and the mock-only browser test.
 
@@ -143,7 +145,7 @@ Windows PowerShell blocks `npm` scripts by default. Run `Set-ExecutionPolicy -Sc
 | **401** and "session has expired" toast         | Connection is fine; sign-in mismatch (see above)                                                                                                   |
 | **403** `ADMIN_REQUIRED` / `USER_ROLE_REQUIRED` | Role mismatch between dashboard and backend                                                                                                        |
 | **413** on upload                               | File over the backend limit (`MAX_UPLOAD_BYTES`, 2 MB by default). nginx allows 5 MB                                                               |
-| Agent 2 shows a "Running on mock data" banner   | The page was built or started with `VITE_USE_MOCKS=true`                                                                                           |
+| Agent 2 shows a "Running on mock data" banner   | The page was built with `VITE_AGENT2_USE_MOCKS` not set to `false` (the current `Dockerfile` default)                                              |
 | Works locally, not on the server                | The server `.env` value is only read at container start; run the compose command with `--force-recreate`                                           |
 
 ## Not verified when this was written

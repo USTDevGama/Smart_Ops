@@ -14,8 +14,8 @@ import { MockClient } from './mock/mockClient';
 
 /**
  * The ONLY surface the React app talks to. Two implementations:
- *   MockClient  (VITE_USE_MOCKS=true)  in-browser fake backend
- *   HttpClient  (anything else)        real backend, reached through /agent2-api (see docs/agent2-backend-integration.md)
+ *   MockClient  (default)                    in-browser fake backend
+ *   HttpClient  (VITE_AGENT2_USE_MOCKS=false) real backend, reached through /agent2-api (see docs/agent2-backend-integration.md)
  * Both implement exactly this interface, so swapping is a config change.
  */
 export interface ApiClient {
@@ -42,10 +42,11 @@ export interface ApiClient {
   getResult(runId: string): Promise<RunResult>;
 }
 
-// Same switch as agents 3 and 4: only VITE_USE_MOCKS=true runs on mock data. The production image builds with
-// VITE_USE_MOCKS=false, so the deployed dashboard talks to the real backend.
+// Agent 2 has its own switch (not the shared VITE_USE_MOCKS, which makes Agents 3 and 4 live in the production image).
+// Mock data unless VITE_AGENT2_USE_MOCKS=false. The Dockerfile sets it to true until the Pod 2 backend is connected:
+// then change that one line to false.
 export const API_MODE: 'mock' | 'http' =
-  import.meta.env.VITE_USE_MOCKS === 'true' ? 'mock' : 'http';
+  import.meta.env.VITE_AGENT2_USE_MOCKS === 'false' ? 'http' : 'mock';
 // nginx (and the Vite dev proxy) strip /agent2-api, so this reaches the backend's /api/v1.
 export const API_BASE_URL: string = '/agent2-api/api/v1';
 
