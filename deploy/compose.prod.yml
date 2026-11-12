@@ -10,7 +10,7 @@ services:
     container_name: smart-ops-dashboard
     restart: unless-stopped
     ports:
-      # Host port from the server .env -> nginx's internal port 8080 (unprivileged nginx cannot bind 80).
+      # Host port from the server .env -> nginx's internal port 8080 (nginx runs as non-root and cannot bind 80).
       - '${DASHBOARD_PORT:?set DASHBOARD_PORT in the server .env}:8080'
     environment:
       # Smart_Ops_Pod3 backend, reachable from the container. Proxied at /agent3-api.

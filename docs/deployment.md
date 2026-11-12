@@ -11,12 +11,12 @@ The common dashboard (shared by Pods A/B/C/D) is built into one nginx image and 
 
 ## Files
 
-| File                         | Purpose                                                              |
-| ---------------------------- | -------------------------------------------------------------------- |
-| `Dockerfile`                 | Node build stage, then unprivileged nginx serving `dist/` on 8080    |
-| `deploy/nginx.conf.template` | SPA fallback, `/healthz`, and `/agent3-api/` proxy to Pod3           |
-| `deploy/compose.prod.yml`    | Own Compose project `smart-ops-dashboard`, own default network       |
-| `deploy/.env.example`        | Server-side values (copied to `/data/apps/smart-ops-dashboard/.env`) |
+| File                         | Purpose                                                                 |
+| ---------------------------- | ----------------------------------------------------------------------- |
+| `Dockerfile`                 | Node build stage, then `nginx:1.27-alpine` as non-root, `dist/` on 8080 |
+| `deploy/nginx.conf.template` | SPA fallback, `/healthz`, and `/agent3-api/` proxy to Pod3              |
+| `deploy/compose.prod.yml`    | Own Compose project `smart-ops-dashboard`, own default network          |
+| `deploy/.env.example`        | Server-side values (copied to `/data/apps/smart-ops-dashboard/.env`)    |
 
 ## Runner
 
