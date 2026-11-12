@@ -36,6 +36,7 @@ function summaryFor(traineeId: string, runId: string, status: RunStatus): Summar
         outcome_match: 'partial',
         exercises: [{ id: 'EX-07', title: 'Estimate a small change list', minutes: 30 }],
         outcomes: [{ id: 'OUT-3', wording: 'Gives a range with stated assumptions' }],
+        why: 'Estimation scored 2, below the gap threshold.',
       },
     ],
     strong: [{ goal: 'G1', label: 'Client listening', score: 4 }],

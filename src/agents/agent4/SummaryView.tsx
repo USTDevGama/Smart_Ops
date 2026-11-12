@@ -1,10 +1,8 @@
-import type { RunStatus, ScoreRow, Summary } from './api';
+import type { GapSummary, RunStatus, ScoreRow, Summary } from './api';
 import styles from './SummaryView.module.css';
 
 // The scores run from 0 to 5 on the bars.
 const SCALE_MAX = 5;
-// A score at or above this is shown as a strong area (the same cut-off the agent uses).
-const STRONG_FROM = 4;
 
 export const STATUS_LABEL: Record<RunStatus, string> = {
   running: 'Running',
@@ -23,16 +21,10 @@ function pct(value: number): string {
   return `${(value / SCALE_MAX) * 100}%`;
 }
 
-function gapLabel(row: ScoreRow, threshold: number): string {
-  if (row.score === null) return 'Not assessed';
-  if (row.score <= threshold) return 'Gap';
-  if (row.score >= STRONG_FROM) return 'Strong';
-  return '';
-}
-
-/** One goal's score as a bar, with the gap threshold marked. Every goal is shown, gap or not. */
+/** One goal's score as a bar against the gap threshold, with a Met / gap pill. Every goal is
+ * shown, whether it is a gap or not. The pill's number is threshold minus score: real arithmetic
+ * on real numbers, not a label the agent chose. */
 function ScoreRowView({ row, threshold }: { row: ScoreRow; threshold: number }) {
-  const label = gapLabel(row, threshold);
   return (
     <div className={styles.scoreRow}>
       <div className={styles.goal}>
@@ -55,14 +47,44 @@ function ScoreRowView({ row, threshold }: { row: ScoreRow; threshold: number }) 
       )}
       <div className={styles.value}>
         <span className={styles.number}>{row.score ?? '-'}</span>
-        <span className={label === 'Gap' ? styles.gapText : styles.small}>{label}</span>
+        {row.score === null ? null : row.score <= threshold ? (
+          <span className={styles.pillGap}>-{(threshold - row.score).toFixed(1)} pts</span>
+        ) : (
+          <span className={styles.pillMet}>Met</span>
+        )}
       </div>
     </div>
   );
 }
 
-/** One of the agent's written texts (recommendations or the full report). Shown as it was
- * written, not recomputed. */
+/** One recommendation card: the exercise the agent picked for one gap, and why. No invented
+ * fields: the approved library has only an id, a title and minutes, all type "exercise", and no
+ * due dates, so none of those are shown here. */
+function RecommendationCard({
+  gap,
+  exercise,
+}: {
+  gap: GapSummary;
+  exercise: GapSummary['exercises'][number];
+}) {
+  return (
+    <div className={styles.recCard}>
+      <div className={styles.recAvatar}>{exercise.title.charAt(0).toUpperCase()}</div>
+      <div className={styles.recBody}>
+        <div className={styles.recTop}>
+          <span className={styles.recTitle}>{exercise.title}</span>
+          <span className={styles.tag}>Exercise</span>
+        </div>
+        <div className={styles.small}>
+          {gap.goal} {gap.label} &middot; score {gap.score} &middot; {exercise.minutes} min
+        </div>
+        <p className={styles.small}>{gap.why}</p>
+      </div>
+    </div>
+  );
+}
+
+/** One of the agent's written texts (the full report). Shown as it was written, not recomputed. */
 function TextSection({ id, heading, text }: { id: string; heading: string; text: string }) {
   return (
     <section className={styles.card} aria-labelledby={id}>
@@ -74,8 +96,8 @@ function TextSection({ id, heading, text }: { id: string; heading: string; text:
   );
 }
 
-/** The trainee's result: every goal's score as a bar, then the agent's recommendations and full
- * report as text. All three come from the same checked data. */
+/** The trainee's result: every goal's score as a bar, recommendation cards per gap, and the
+ * agent's full report as text. All three come from the same checked data. */
 export function ResultsBlock({ summary }: { summary: Summary }) {
   return (
     <div className={styles.results}>
@@ -87,18 +109,41 @@ export function ResultsBlock({ summary }: { summary: Summary }) {
       <section className={styles.card} aria-labelledby="gaps-heading">
         <div className={styles.sectionHead}>
           <h2 id="gaps-heading">Skill gaps</h2>
-          <span className={styles.small}>Score out of {SCALE_MAX}</span>
+          <span className={styles.small}>Current vs. target</span>
         </div>
         {summary.scores.map((row) => (
           <ScoreRowView key={row.goal} row={row} threshold={summary.gap_threshold} />
         ))}
         <div className={styles.legend}>
-          <span className={styles.legendBar}>Score</span>
-          <span className={styles.legendMark}>Gap threshold {summary.gap_threshold}</span>
+          <span className={styles.legendBar}>Current level</span>
+          <span className={styles.legendMark}>Target (gap threshold {summary.gap_threshold})</span>
         </div>
       </section>
 
-      <TextSection id="recs-heading" heading="Recommendations" text={summary.recommendations} />
+      <section className={styles.card} aria-labelledby="recs-heading">
+        <div className={styles.sectionHead}>
+          <h2 id="recs-heading">Recommendations</h2>
+          <span className={styles.small}>
+            {summary.gaps.reduce((n, g) => n + g.exercises.length, 0)} exercises
+          </span>
+        </div>
+        {summary.gaps.length === 0 ? (
+          <p className={styles.small}>No goal is a skill gap, so no exercise is needed.</p>
+        ) : (
+          summary.gaps.map((gap) =>
+            gap.exercises.length === 0 ? (
+              <p key={gap.goal} className={styles.small}>
+                {gap.goal} {gap.label}: no approved exercise for this goal yet.
+              </p>
+            ) : (
+              gap.exercises.map((exercise) => (
+                <RecommendationCard key={exercise.id} gap={gap} exercise={exercise} />
+              ))
+            ),
+          )
+        )}
+      </section>
+
       <TextSection id="report-heading" heading="Assessment report" text={summary.report} />
     </div>
   );

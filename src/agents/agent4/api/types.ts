@@ -30,6 +30,8 @@ export type GapSummary = {
   outcome_match: string;
   exercises: Exercise[];
   outcomes: Outcome[];
+  // One sentence from the agent: why the exercise fits (or why none is recommended).
+  why: string;
 };
 
 export type Summary = {
