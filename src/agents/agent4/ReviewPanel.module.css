@@ -1,0 +1,42 @@
+.review {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 560px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 2px solid var(--ust-rule-heavy);
+}
+.review h3 {
+  margin: 0;
+  font: 700 16px/24px var(--ust-font-display);
+  color: var(--ust-ink);
+}
+.meta {
+  font-size: 13px;
+  color: var(--ust-ink-soft);
+}
+.fieldset {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+.fieldset legend {
+  font-weight: 600;
+  color: var(--ust-ink);
+  padding: 0;
+  margin-bottom: 4px;
+}
+.choice {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--ust-ink);
+}
+.actions {
+  display: flex;
+  gap: 8px;
+}
