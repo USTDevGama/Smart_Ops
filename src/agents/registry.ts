@@ -16,8 +16,9 @@ export const AGENTS: AgentDefinition[] = [
   },
   {
     id: 'agent2',
-    name: 'Agent 2',
-    description: 'Placeholder. Team 2 describes the agent here.',
+    name: 'Bias Flagging Agent',
+    description:
+      'Check feedback text against bias flags and review low-confidence findings. Admins manage the flags.',
     roles: ['trainee', 'admin'],
     component: lazy(() => import('./agent2')),
   },

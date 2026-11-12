@@ -1,0 +1,73 @@
+/* Minimal resets for this UI, scoped to .bf so they cannot leak into the host portal.
+   :where() keeps their specificity at zero, so every Tailwind utility still wins.
+   (Tailwind's preflight is disabled; see tailwind.config.js.) */
+:where(.bf) *,
+:where(.bf) *::before,
+:where(.bf) *::after {
+  border-width: 0;
+  border-style: solid;
+  border-color: var(--color-border-default);
+}
+:where(.bf) button,
+:where(.bf) input,
+:where(.bf) select,
+:where(.bf) textarea {
+  font: inherit;
+  color: inherit;
+  margin: 0;
+}
+:where(.bf) button {
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+}
+:where(.bf) button:disabled {
+  cursor: not-allowed;
+}
+:where(.bf) table {
+  border-collapse: collapse;
+}
+:where(.bf) ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+:where(.bf) blockquote,
+:where(.bf) dl,
+:where(.bf) dd,
+:where(.bf) pre {
+  margin: 0;
+}
+:where(.bf) img {
+  display: block;
+}
+:where(.bf) .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+/* Modal backdrop: the heading colour at 40% (spec §4 uses the same value). */
+.bf-overlay {
+  background: color-mix(in srgb, var(--color-text-heading) 40%, transparent);
+}
+
+/* The one animation: the spinner on the flag being checked. Off under reduced motion (spec §7). */
+@keyframes bf-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.bf-spin {
+  animation: bf-spin 0.8s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .bf-spin {
+    animation: none;
+  }
+}

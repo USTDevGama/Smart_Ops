@@ -45,7 +45,7 @@ describe('login and routing', () => {
     renderAt('/login');
     await signIn('Trainee');
     expect(await screen.findByRole('heading', { name: 'Choose an agent' })).toBeInTheDocument();
-    for (const name of ['Agent 1', 'Agent 2', 'Stakeholder Roleplay', 'Agent 4']) {
+    for (const name of ['Agent 1', 'Bias Flagging Agent', 'Stakeholder Roleplay', 'Agent 4']) {
       expect(screen.getByRole('button', { name: new RegExp(name) })).toBeInTheDocument();
     }
   });
