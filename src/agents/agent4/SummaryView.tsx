@@ -122,16 +122,6 @@ export function ResultsBlock({ summary }: { summary: Summary }) {
             </>
           )}
 
-          {summary.review_required && (
-            <p className={styles.note}>
-              A person must review this before it is shared. The goal to outcome table is proposed
-              and not yet agreed.
-            </p>
-          )}
-          <p className={styles.small}>
-            Versions: rules {summary.versions.rules}, outcome mapping {summary.versions.mapping},
-            content library {summary.versions.content_library}.
-          </p>
         </section>
       </div>
     </div>
