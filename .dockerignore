@@ -1,0 +1,17 @@
+node_modules
+dist
+coverage
+test-results
+playwright-report
+.git
+.github
+.claude
+.env
+.env.*
+!.env.example
+*.log
+tsconfig.tsbuildinfo
+docs
+e2e
+reference
+deploy/.env
