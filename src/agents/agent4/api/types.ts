@@ -3,10 +3,11 @@
 
 export type RunStatus = 'running' | 'pending_review' | 'failed' | 'approved' | 'rejected';
 
+// One row per trainee in the trainee database. Status and time are null until the first run.
 export type TraineeRow = {
   trainee_id: string;
-  status: RunStatus;
-  last_run_at: string;
+  status: RunStatus | null;
+  last_run_at: string | null;
 };
 
 export type ScoreRow = {
