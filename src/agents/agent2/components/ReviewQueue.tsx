@@ -5,7 +5,7 @@ import { useToast } from './Toast';
 
 /**
  * Decisions are text buttons with a pressed state, so the choice never relies on colour alone: accept = primary,
- * reject = error, escalate = heading colour. The confidence bar is one accent fill; the number carries the meaning.
+ * reject = error. The confidence bar is one accent fill; the number carries the meaning.
  * Which items need review is decided by the BACKEND, not here.
  */
 const options: { value: Decision; label: string; active: string; idle: string }[] = [
@@ -20,12 +20,6 @@ const options: { value: Decision; label: string; active: string; idle: string }[
     label: 'Reject',
     active: 'border-error bg-error text-white',
     idle: 'border-error-mid text-error hover:bg-error-faint',
-  },
-  {
-    value: 'escalate',
-    label: 'Escalate',
-    active: 'border-heading bg-heading text-white',
-    idle: 'border-line text-heading hover:border-highlight-border hover:bg-highlight',
   },
 ];
 
@@ -123,8 +117,8 @@ export default function ReviewQueue({
         </span>
       </div>
       <p className="mt-1 text-sm text-body">
-        The agent was not confident about these flags. Accept, reject or escalate each one. The full
-        output appears once all are reviewed.
+        The agent was not confident about these flags. Accept or reject each one. The full output
+        appears once all are reviewed.
       </p>
       <ul className="mt-4 space-y-3">
         {items.map((i) => (

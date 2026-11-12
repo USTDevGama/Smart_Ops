@@ -2,7 +2,6 @@ import { useState } from 'react';
 import type { RunResult } from '../api/types';
 import Button from './Button';
 import FindingCard from './FindingCard';
-import GoalScores from './GoalScores';
 
 async function copyText(text: string): Promise<boolean> {
   try {
@@ -45,7 +44,7 @@ export default function ResultViewer({ result }: { result: RunResult }) {
   return (
     <div>
       <h3>Output</h3>
-      <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <div className="mt-3 grid grid-cols-1 gap-2 min-[420px]:grid-cols-3">
         <Stat label="Flags checked" value={s.flags_checked} tone="border-line bg-neu-50" />
         <Stat
           label="Findings"
@@ -53,10 +52,9 @@ export default function ResultViewer({ result }: { result: RunResult }) {
           tone="border-highlight-border bg-highlight"
         />
         <Stat label="Human reviewed" value={s.human_reviewed} tone="border-line bg-neu-50" />
-        <Stat label="Escalated" value={s.escalated} tone="border-error-mid bg-error-faint" />
       </div>
 
-      {/* One scrollable area: flag cards, goal scores, then the raw JSON (itself scrollable) at the bottom. */}
+      {/* One scrollable area: flag cards, then the raw JSON (itself scrollable) at the bottom. */}
       <div
         role="region"
         aria-label="Output details"
@@ -79,15 +77,6 @@ export default function ResultViewer({ result }: { result: RunResult }) {
             </p>
           )}
         </section>
-
-        {result.goal_scoring && result.goal_scoring.length > 0 && (
-          <section aria-labelledby="out-goals">
-            <h4 id="out-goals" className="mb-2">
-              Trainee goal scores
-            </h4>
-            <GoalScores scores={result.goal_scoring} />
-          </section>
-        )}
 
         <section aria-labelledby="out-json">
           <div className="mb-2 flex items-center justify-between gap-3">

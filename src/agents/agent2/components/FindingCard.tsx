@@ -24,11 +24,6 @@ const statusStyle: Record<FindingStatus, { label: string; box: string; icon: JSX
     box: 'border-error-mid bg-error-subtle',
     icon: <ErrorMarkIcon />,
   },
-  escalated: {
-    label: 'Escalated',
-    box: 'border-warning-mid bg-warning-subtle',
-    icon: <WarningMarkIcon />,
-  },
 };
 
 /** One plain sentence about who looked at the finding. */
@@ -36,8 +31,7 @@ function reviewText(f: Finding): string {
   if (f.status === 'pending_review') return 'Waiting for a person to review this finding.';
   if (!f.reviewed_by_human) return 'Not reviewed by a person: the agent was confident enough.';
   if (f.status === 'accepted') return 'Reviewed by a person, who accepted it.';
-  if (f.status === 'rejected') return 'Reviewed by a person, who rejected it.';
-  return 'Reviewed by a person, who escalated it.';
+  return 'Reviewed by a person, who rejected it.';
 }
 
 /** "subtle_harsh" -> "Subtle harsh". Flag names come from the admin or the backend and may use _ or -. */

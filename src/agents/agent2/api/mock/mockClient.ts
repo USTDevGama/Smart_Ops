@@ -258,7 +258,7 @@ export class MockClient implements ApiClient {
       throw new ApiError(409, 'run_not_reviewable', `Run is ${run.status}; decisions are closed`);
     if (!run.review_items.some((i) => i.item_id === itemId))
       throw new ApiError(404, 'not_found', 'Review item not found');
-    if (!['accept', 'reject', 'escalate'].includes(req.decision))
+    if (!['accept', 'reject'].includes(req.decision))
       throw new ApiError(400, 'validation_error', 'Invalid decision');
     rec.decisions[itemId] = req.decision;
     rec.last_decision_ms = this.now();

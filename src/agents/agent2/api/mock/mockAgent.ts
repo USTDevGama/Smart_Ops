@@ -1,13 +1,4 @@
-import type {
-  Decision,
-  Finding,
-  Flag,
-  ReviewItem,
-  Run,
-  RunResult,
-  FlagProgress,
-  TraineeGoalScore,
-} from '../types';
+import type { Decision, Finding, Flag, ReviewItem, Run, RunResult, FlagProgress } from '../types';
 
 /**
  * MOCK ONLY. Stand-in for the real agent + backend worker. None of this logic belongs in the frontend
@@ -84,6 +75,26 @@ export interface PlannedFinding {
 
 const MOCK_TRAINEES = ['T-03', 'T-07'];
 
+/**
+ * A made-up reason in the agent's voice about THIS piece of feedback. It is not the flag's description:
+ * the real agent writes its own explanation per finding and the backend sends it as `explanation`.
+ */
+const EXPLANATION_TEMPLATES: ((flag: string, quote: string) => string)[] = [
+  (flag, quote) =>
+    `The agent read "${quote}" as ${flag}: the wording is aimed at the person rather than at the work they did.`,
+  (flag, quote) =>
+    `This comment ("${quote}") reads as ${flag}. The same tone does not show up in the rest of the feedback, so it may be bias rather than a fair assessment.`,
+  (flag, quote) =>
+    `The phrase "${quote}" was judged to be ${flag} because it makes a general claim without pointing to any specific example.`,
+];
+
+function mockExplanation(flagName: string, quote: string, rng: () => number): string {
+  const label = flagName.replace(/[_-]+/g, ' ').trim().toLowerCase();
+  const short = quote.length > 60 ? `${quote.slice(0, 57)}…` : quote;
+  const pick = EXPLANATION_TEMPLATES[Math.floor(rng() * EXPLANATION_TEMPLATES.length)];
+  return pick(label, short);
+}
+
 /** Decide up-front (deterministically) what the "agent" will find for each flag. */
 export function planRun(
   runId: string,
@@ -115,7 +126,7 @@ export function planRun(
       location: hit.path,
       evidence_ids,
       trainee_id: MOCK_TRAINEES[Math.floor(rng() * MOCK_TRAINEES.length)],
-      explanation: `The wording here may indicate "${f.name}". ${f.description}`,
+      explanation: mockExplanation(f.name, snippet, rng),
     };
   });
 
@@ -229,9 +240,7 @@ function buildResult(rec: RunRecord, reviewItems: ReviewItem[]): RunResult {
         ? 'auto_accepted'
         : review.decision === 'accept'
           ? 'accepted'
-          : review.decision === 'reject'
-            ? 'rejected'
-            : 'escalated';
+          : 'rejected';
       return {
         finding_id: `${rec.run_id}:f${idx + 1}`,
         flag_id: p.flag_id,
@@ -258,27 +267,7 @@ function buildResult(rec: RunRecord, reviewItems: ReviewItem[]): RunResult {
       human_reviewed: findings.filter((f) => f.reviewed_by_human).length,
       accepted: count('accepted'),
       rejected: count('rejected'),
-      escalated: count('escalated'),
     },
     findings,
-    goal_scoring: mockGoalScoring(rec.run_id),
   };
-}
-
-/** Stable fake goal scores for two trainees. G12 is always "not enough evidence", as in the agreed sample output. */
-function mockGoalScoring(runId: string): TraineeGoalScore[] {
-  return MOCK_TRAINEES.map((trainee_id) => {
-    const rng = mulberry32(hash(`${runId}:${trainee_id}`));
-    const score = () => 2 + Math.floor(rng() * 3);
-    return {
-      trainee_id,
-      B_themes: {
-        G05: score(),
-        G06: score(),
-        G07: score(),
-        G11: score(),
-        G12: 'INSUFFICIENT_EVIDENCE' as const,
-      },
-    };
-  });
 }

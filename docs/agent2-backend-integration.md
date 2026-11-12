@@ -90,7 +90,7 @@ Also note: the backend refuses admins on analyses (403 `USER_ROLE_REQUIRED`). Th
 
 ## What the UI expects back for a finished run
 
-The output screen now shows one card per detected flag, then goal scores, then the raw JSON. The response of `GET /runs/{id}` and `GET /runs/{id}/result` (`result` object) should follow `src/agents/agent2/api/types.ts`. For each entry in `findings`:
+The output screen shows one card per detected flag, then the raw JSON. The response of `GET /runs/{id}` and `GET /runs/{id}/result` (`result` object) should follow `src/agents/agent2/api/types.ts`. For each entry in `findings`:
 
 | Field                  | Required | Meaning                                                                                |
 | ---------------------- | -------- | -------------------------------------------------------------------------------------- |
@@ -98,13 +98,13 @@ The output screen now shows one card per detected flag, then goal scores, then t
 | `flag_id`, `flag_name` | yes      | The flag; names like `subtle_harsh` are shown as "Subtle harsh"                        |
 | `confidence`           | yes      | Number from 0 to 1                                                                     |
 | `evidence_ids`         | yes      | Ids of the input records behind the finding (for example `FB-019`); shown as "Sources" |
-| `explanation`          | yes      | Plain-language reason                                                                  |
-| `status`               | yes      | `pending_review`, `auto_accepted`, `accepted`, `rejected` or `escalated`               |
+| `explanation`          | yes      | The agent's own reason for this finding (never the flag's description)                 |
+| `status`               | yes      | `pending_review`, `auto_accepted`, `accepted` or `rejected`                            |
 | `reviewed_by_human`    | yes      | Whether a person decided                                                               |
 | `trainee_id`           | no       | The card shows a Trainee row only when this is present                                 |
 | `evidence`, `location` | no       | A quote and its JSON path, shown under the card when present                           |
 
-`result.goal_scoring` is optional: a list of `{ "trainee_id": "T-03", "B_themes": { "G05": 4, "G12": "INSUFFICIENT_EVIDENCE" } }`. If the backend stores it in its own table and does not return it, the "Trainee goal scores" section simply does not appear. Decide with the UI team whether it should be returned.
+Human review has two decisions only: `accept` and `reject`. The UI has no Escalate button and no `escalated` status or count, and it does not show goal scoring (`goal_scoring` in a response is ignored).
 
 The matching update to `Smart_Ops_Pod2/contracts/ui_api.openapi.yaml` is **not done yet**.
 

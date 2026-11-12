@@ -53,7 +53,7 @@ export type Role = 'user' | 'admin';
  */
 export type RunStatus = 'queued' | 'running' | 'needs_review' | 'completed' | 'failed';
 
-export type Decision = 'accept' | 'reject' | 'escalate';
+export type Decision = 'accept' | 'reject';
 
 export type FlagCheckState = 'pending' | 'checking' | 'checked';
 
@@ -107,8 +107,7 @@ export interface ReviewItem {
  * pending_review: raised but not yet decided by a person (the status the agent writes first).
  * The rest are final: the agent was confident enough (auto_accepted) or a person decided.
  */
-export type FindingStatus =
-  'pending_review' | 'auto_accepted' | 'accepted' | 'rejected' | 'escalated';
+export type FindingStatus = 'pending_review' | 'auto_accepted' | 'accepted' | 'rejected';
 
 export interface Finding {
   finding_id: string;
@@ -128,16 +127,7 @@ export interface Finding {
   reviewed_by_human: boolean;
 }
 
-/** One theme score: a number, or the text below when there was not enough feedback to score. */
-export type ThemeScore = number | 'INSUFFICIENT_EVIDENCE';
-
-/** Goal scoring for one trainee. Keys of B_themes are goal codes such as "G05". */
-export interface TraineeGoalScore {
-  trainee_id: string;
-  B_themes: Record<string, ThemeScore>;
-}
-
-/** Final output JSON shown to the user (flag cards, goal scores, and the raw JSON with a copy button). */
+/** Final output JSON shown to the user (one card per finding, then the raw JSON with a copy button). */
 export interface RunResult {
   run_id: string;
   generated_at: string;
@@ -149,11 +139,8 @@ export interface RunResult {
     human_reviewed: number;
     accepted: number;
     rejected: number;
-    escalated: number;
   };
   findings: Finding[];
-  /** Optional: the backend may store goal scoring in its own table and not send it here. */
-  goal_scoring?: TraineeGoalScore[];
 }
 
 export interface Run {

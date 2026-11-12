@@ -33,8 +33,11 @@ Status: `merged` (copied in, lint, typecheck, unit and mock browser tests pass).
 - Port: agent2 proxies to 8001 by default so it can run next to the Agent 3 backend on 8000.
 - Production: nginx route `/agent2-api/` and `AGENT2_API_URL` are in the repo. The server `.env` still needs the `AGENT2_API_URL` line; see `docs/agent2-backend-integration.md`.
 - **Output contract changed on the portal side only.** The result now shows one card per detected flag, then goal scores, then the raw
-  JSON. This follows the agent's final JSON (`detected_flags` with `flag`, `confidence`, `status`, `evidence_ids`, `explanation`, and
-  `goal_scoring` per trainee). `api/types.ts` gained `Finding.evidence_ids`, optional `trainee_id`, `FindingStatus` value `pending_review`,
-  and optional `RunResult.goal_scoring`. `evidence` and `location` became optional. The matching change in
-  `Smart_Ops_Pod2/contracts/ui_api.openapi.yaml` and the backend response (read from the `analysis_findings` table) is still to be made there.
-  Open for the backend team: whether `goal_scoring` is returned to the UI at all, and whether each finding can carry a `trainee_id`.
+  JSON. This follows the agent's final JSON (`detected_flags` with `flag`, `confidence`, `status`, `evidence_ids`, `explanation`).
+  `api/types.ts` gained `Finding.evidence_ids`, optional `trainee_id` and `FindingStatus` value `pending_review`. `evidence` and
+  `location` became optional. The matching change in `Smart_Ops_Pod2/contracts/ui_api.openapi.yaml` and the backend response (read from
+  the `analysis_findings` table) is still to be made there. Open for the backend team: whether each finding can carry a `trainee_id`.
+- **Removed on request:** the trainee goal scores section (`goal_scoring` is ignored if the backend sends it) and the Escalate decision.
+  Review is Accept or Reject only. `Decision` is `accept | reject`, `FindingStatus` has no `escalated`, and `summary` has no `escalated`
+  count. The backend must not return `escalated` (the card has no style for it) and should reject an `escalate` decision.
+- **Explanation** on each card is the agent's own `explanation` for that finding, never the flag's description.

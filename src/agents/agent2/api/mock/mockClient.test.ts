@@ -128,8 +128,12 @@ describe('runs', () => {
     expect(last.result?.summary.human_reviewed).toBe(review.review_items.length);
     expect(last.result?.findings.every((f) => f.status !== undefined)).toBe(true);
     expect(last.result?.findings.every((f) => f.evidence_ids.length > 0)).toBe(true);
-    expect(last.result?.goal_scoring?.length).toBeGreaterThan(0);
-    expect(last.result?.goal_scoring?.[0].B_themes.G12).toBe('INSUFFICIENT_EVIDENCE');
+    // the explanation is the agent's reasoning about the finding, not the flag's description
+    const flags = await api.listFlags();
+    for (const f of last.result?.findings ?? []) {
+      expect(f.explanation.length).toBeGreaterThan(0);
+      for (const flag of flags) expect(f.explanation).not.toContain(flag.description);
+    }
     expect(await api.getResult(run_id)).toEqual(last.result);
 
     await expect(
