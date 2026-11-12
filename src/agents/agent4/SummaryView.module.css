@@ -49,6 +49,14 @@
   font: 700 16px/24px var(--ust-font-display);
   color: var(--ust-ink);
 }
+.report {
+  margin: 0;
+  white-space: pre-wrap;
+  font-family: var(--ust-font-body, inherit);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ust-ink);
+}
 .sectionHead {
   display: flex;
   justify-content: space-between;

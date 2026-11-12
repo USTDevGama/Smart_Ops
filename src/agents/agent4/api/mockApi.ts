@@ -42,6 +42,22 @@ function summaryFor(traineeId: string, runId: string, status: RunStatus): Summar
     not_assessed: [{ goal: 'G4', label: 'Written updates' }],
     review_required: true,
     versions: { rules: 'r-0.3', mapping: 'm-draft-1', content_library: 'cl-2026-10' },
+    report:
+      `Trainee ${traineeId}\n\n` +
+      'Assessed 3 of 4 goals.\n\n' +
+      'Scores\n' +
+      '  G1 Client listening                     4\n' +
+      '  G2 Estimation                            2\n' +
+      '  G3 Escalation handling                   3\n' +
+      '  G4 Written updates              not assessed\n\n' +
+      'Areas to work on\n' +
+      '  G2 Estimation: score 2, severity moderate\n' +
+      '    Exercise: EX-07 Estimate a small change list (30 min)\n' +
+      '    Outcome OUT-3 (partial match): Gives a range with stated assumptions.\n\n' +
+      'Strong areas (score 4 or above)\n' +
+      '  G1 Client listening: 4\n\n' +
+      'Not assessed\n' +
+      '  G4 Written updates\n',
   };
 }
 

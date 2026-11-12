@@ -45,6 +45,8 @@ export type Summary = {
   not_assessed: { goal: string; label: string }[];
   review_required: boolean;
   versions: { rules: string; mapping: string; content_library: string };
+  // The one text the agent writes; this is what the screen shows.
+  report: string;
 };
 
 export type ReviewBody = {
