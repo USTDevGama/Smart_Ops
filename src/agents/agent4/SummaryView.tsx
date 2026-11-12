@@ -1,3 +1,5 @@
+import { useRef } from 'react';
+
 import type { GapSummary, RunStatus, ScoreRow, Summary } from './api';
 import styles from './SummaryView.module.css';
 
@@ -96,9 +98,30 @@ function TextSection({ id, heading, text }: { id: string; heading: string; text:
   );
 }
 
+/** A tile that jumps the page to one section below, instead of the person scrolling past the
+ * others to find it. */
+function NavTile({ label, value, onClick }: { label: string; value: string; onClick: () => void }) {
+  return (
+    <button type="button" className={styles.navTile} onClick={onClick}>
+      <span className={styles.navLabel}>{label}</span>
+      <span className={styles.navValue}>{value}</span>
+    </button>
+  );
+}
+
 /** The trainee's result: every goal's score as a bar, recommendation cards per gap, and the
- * agent's full report as text. All three come from the same checked data. */
+ * agent's full report as text. All three come from the same checked data. Three tiles above the
+ * sections jump straight to the one you click, instead of scrolling past the others. */
 export function ResultsBlock({ summary }: { summary: Summary }) {
+  const gapsRef = useRef<HTMLElement>(null);
+  const recsRef = useRef<HTMLElement>(null);
+  const reportRef = useRef<HTMLElement>(null);
+  const exerciseCount = summary.gaps.reduce((n, g) => n + g.exercises.length, 0);
+
+  function goTo(ref: React.RefObject<HTMLElement | null>) {
+    ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
   return (
     <div className={styles.results}>
       <div className={styles.sectionHead}>
@@ -106,7 +129,21 @@ export function ResultsBlock({ summary }: { summary: Summary }) {
         <StatusBadge status={summary.status} />
       </div>
 
-      <section className={styles.card} aria-labelledby="gaps-heading">
+      <div className={styles.navStrip}>
+        <NavTile
+          label="Skill gaps"
+          value={String(summary.gaps.length)}
+          onClick={() => goTo(gapsRef)}
+        />
+        <NavTile
+          label="Recommendations"
+          value={String(exerciseCount)}
+          onClick={() => goTo(recsRef)}
+        />
+        <NavTile label="Report" value="View" onClick={() => goTo(reportRef)} />
+      </div>
+
+      <section ref={gapsRef} className={styles.card} aria-labelledby="gaps-heading">
         <div className={styles.sectionHead}>
           <h2 id="gaps-heading">Skill gaps</h2>
           <span className={styles.small}>Current vs. target</span>
@@ -120,12 +157,10 @@ export function ResultsBlock({ summary }: { summary: Summary }) {
         </div>
       </section>
 
-      <section className={styles.card} aria-labelledby="recs-heading">
+      <section ref={recsRef} className={styles.card} aria-labelledby="recs-heading">
         <div className={styles.sectionHead}>
           <h2 id="recs-heading">Recommendations</h2>
-          <span className={styles.small}>
-            {summary.gaps.reduce((n, g) => n + g.exercises.length, 0)} exercises
-          </span>
+          <span className={styles.small}>{exerciseCount} exercises</span>
         </div>
         {summary.gaps.length === 0 ? (
           <p className={styles.small}>No goal is a skill gap, so no exercise is needed.</p>
@@ -144,7 +179,9 @@ export function ResultsBlock({ summary }: { summary: Summary }) {
         )}
       </section>
 
-      <TextSection id="report-heading" heading="Assessment report" text={summary.report} />
+      <section ref={reportRef}>
+        <TextSection id="report-heading" heading="Assessment report" text={summary.report} />
+      </section>
     </div>
   );
 }
