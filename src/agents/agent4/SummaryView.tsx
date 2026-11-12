@@ -121,7 +121,6 @@ export function ResultsBlock({ summary }: { summary: Summary }) {
               <p>{summary.not_assessed.map((row) => `${row.goal} ${row.label}`).join(', ')}</p>
             </>
           )}
-
         </section>
       </div>
     </div>
