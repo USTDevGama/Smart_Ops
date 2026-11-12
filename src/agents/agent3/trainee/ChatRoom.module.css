@@ -65,6 +65,17 @@
   font-weight: 500;
   color: var(--color-text-heading);
 }
+/* While sending: a quiet bubble, no warning colours; the spinner carries the status. */
+.sendingBubble {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-highlight-border);
+  border-radius: var(--radius-md);
+  background: var(--color-highlight-bg);
+  color: var(--color-text-heading);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
 .pendingBubble {
   margin: 0;
   padding: var(--space-2) var(--space-3);

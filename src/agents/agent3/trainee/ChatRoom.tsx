@@ -138,8 +138,18 @@ export function ChatRoom({ initial, flash, onFlash, onLeave }: Props) {
         <Transcript turns={s.turns} youLabel="You" />
         {c.pending && (
           <div className={styles.pending}>
-            <span className={styles.pendingLabel}>You · not saved yet</span>
-            <p className={styles.pendingBubble}>{c.pending.content}</p>
+            {replying ? (
+              // In flight: a normal chat-app spinner next to the message, not an error.
+              <span className={styles.pendingLabel}>
+                <Spinner label="Sending" />
+              </span>
+            ) : (
+              // Failed: the resend/discard card below explains what to do.
+              <span className={styles.pendingLabel}>You · not saved yet</span>
+            )}
+            <p className={replying ? styles.sendingBubble : styles.pendingBubble}>
+              {c.pending.content}
+            </p>
           </div>
         )}
         {replying && (
@@ -152,7 +162,7 @@ export function ChatRoom({ initial, flash, onFlash, onLeave }: Props) {
       {/* Once ended, the summary card below already says why; the info flash would repeat it. */}
       {flash && !(ended && flash.kind === 'info') && <Alert kind={flash.kind}>{flash.text}</Alert>}
 
-      {c.pending && !ended && (
+      {c.pending && !replying && !ended && (
         <Card className="stack-sm">
           <Alert kind="warning">This message was not saved. Send it again or discard it.</Alert>
           <div className={styles.actions}>
@@ -184,7 +194,7 @@ export function ChatRoom({ initial, flash, onFlash, onLeave }: Props) {
           </div>
         </Card>
       ) : (
-        !c.pending && (
+        !(c.pending && !replying) && (
           <form ref={form} className={styles.composer} onSubmit={onSubmit}>
             <Textarea
               label="Your answer"
