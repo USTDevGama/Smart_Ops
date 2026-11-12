@@ -30,6 +30,20 @@ server {
         client_max_body_size 25m;
     }
 
+    # Pod 4 API (agent 4, ASGD). Served same-origin like agent 3. The prefix is stripped, so
+    # /agent4-api/v1/trainees reaches the Pod 4 UI address as /v1/trainees. Without this block,
+    # the SPA fallback below returns index.html and the screen shows a JSON parse error.
+    location /agent4-api/ {
+        proxy_pass ${AGENT4_API_URL}/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 300s;
+        client_max_body_size 1m;
+    }
+
     # Hashed build assets never change: cache hard.
     location /assets/ {
         add_header Cache-Control "public, max-age=31536000, immutable";
