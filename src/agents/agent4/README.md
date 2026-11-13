@@ -11,7 +11,7 @@
 ## What it shows
 
 - **Trainee (`TraineeView.tsx`):** the trainee enters a trainee ID and sees skill gaps,
-  recommendations and the assessment report.
+  recommendations and the skill report.
 - **Evaluator (`EvaluatorView.tsx`):** a list of trainees with search and a status filter.
   Opening one shows the same results, plus the approve or reject decision for a report
   that is pending review. A trainee with no assessment can be assessed from there.
@@ -28,7 +28,7 @@ There is no chat. The earlier question-and-answer screen was removed.
 | `AgentScreen.tsx`   | Picks the view from the role at login                                         |
 | `TraineeView.tsx`   | Trainee lookup by ID                                                          |
 | `EvaluatorView.tsx` | Trainee list and trainee detail                                               |
-| `SummaryView.tsx`   | Results block: KPIs, score bars, recommendations, report                      |
+| `SummaryView.tsx`   | Results page: tiles, overview, score groups, exercise cards, strong areas     |
 | `ReviewPanel.tsx`   | Approve or reject (a comment is required to reject)                           |
 | `theme.css`         | UST brand tokens, light only, scoped to `.asgd`                               |
 | `api/`              | `api.ts` interface, `httpApi.ts` real client, `mockApi.ts` in-memory stand-in |
@@ -45,12 +45,13 @@ uses Figtree and figures use IBM Plex Mono. The palette is in `theme.css`, not i
 Calls go to the Pod 4 API (`Smart_Ops_Pod4`, FastAPI) through the Vite proxy `/agent4-api`,
 which forwards to `VITE_AGENT4_API_URL` (default `http://localhost:8010`).
 
-| Method | Path                              | Used for                                                       |
-| ------ | --------------------------------- | -------------------------------------------------------------- |
-| GET    | `/v1/trainees`                    | Trainee list                                                   |
-| GET    | `/v1/trainees/{id}/summary`       | Results (404: not assessed; 409: stored assessment is too old) |
-| POST   | `/v1/trainees/{id}/assessments`   | Run an assessment                                              |
-| POST   | `/v1/diagnostics/{run_id}/review` | Approve or reject                                              |
+| Method | Path                              | Used for                                                                   |
+| ------ | --------------------------------- | -------------------------------------------------------------------------- |
+| GET    | `/v1/trainees`                    | Trainee list                                                               |
+| GET    | `/v1/trainees/{id}/summary`       | Results (404: no results; 409: a section A, B or C is missing; 503: retry) |
+| POST   | `/v1/trainees/{id}/assessments`   | Run an assessment                                                          |
+| POST   | `/v1/diagnostics/{run_id}/review` | Approve or reject                                                          |
+| POST   | `/v1/reports/pdf`                 | Download the PDF, built from the summary the screen already has            |
 
 Auth headers come from `useAuth().getAuthHeaders()`. The Pod 4 API needs no token when
 its ZITADEL settings are empty and `ASGD_ENV` is `local` or `dev` (see its `docs/sign-in.md`).

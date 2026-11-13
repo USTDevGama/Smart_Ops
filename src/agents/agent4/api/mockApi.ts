@@ -1,10 +1,11 @@
 import { ApiError, type Agent4Api } from './api';
-import type { RunStatus, Summary, TraineeRow } from './types';
+import type { RunStatus, ScoreRow, Summary, TraineeRow } from './types';
 
 /**
  * In-memory stand-in for the Pod 4 API (VITE_USE_MOCKS=true). It uses the same status codes as
- * the real server: 404 for a trainee with no assessment, 409 for an assessment stored before the
- * summary existed. All names and IDs are made up. State resets on page reload.
+ * the real server: 404 for a trainee with no scores, 409 for a trainee with a section missing.
+ * The shape and the goal, exercise and outcome codes are the real ones; the trainee, the scores
+ * and the agent's text are made up. State resets on page reload.
  */
 
 const LATENCY_MS = 120;
@@ -12,67 +13,109 @@ const sleep = (ms = LATENCY_MS) => new Promise((resolve) => setTimeout(resolve, 
 
 const GAP_THRESHOLD = 2;
 
+const LABELS: Record<string, string> = {
+  G01: 'Explaining concepts',
+  G02: 'Engineering process',
+  G03: 'Secure code',
+  G04: 'Handling data',
+  G05: 'Testing own work',
+  G06: 'Clear communication',
+  G07: 'Giving and receiving feedback',
+  G08: 'Handling client pressure',
+  G09: 'Environments and release',
+  G10: 'Responding to incidents',
+  G11: 'Teamwork',
+  G12: 'Independent learning',
+};
+
+// Made-up scores for T-06. null is not assessed.
+const MOCK_SCORES: [string, number | null][] = [
+  ['G01', 4],
+  ['G02', 3],
+  ['G03', 2],
+  ['G04', 3],
+  ['G05', 4],
+  ['G06', 3.5],
+  ['G07', 2],
+  ['G08', 3],
+  ['G09', 4],
+  ['G10', 3],
+  ['G11', 5],
+  ['G12', null],
+];
+
+function scoreRows(): ScoreRow[] {
+  return MOCK_SCORES.map(([goal, score]) => ({
+    goal,
+    label: LABELS[goal],
+    score,
+    sources: score === null ? [] : [`A_scores.${goal}=${score}`],
+  }));
+}
+
 function summaryFor(traineeId: string, runId: string, status: RunStatus): Summary {
+  const scores = scoreRows();
+  const gaps = scores
+    .filter((row) => row.score !== null && row.score <= GAP_THRESHOLD)
+    .map((row) => {
+      const isSecureCode = row.goal === 'G03';
+      return {
+        goal: row.goal,
+        label: row.label,
+        score: row.score as number,
+        evidence: row.sources,
+        outcome_match: 'strong',
+        exercises: isSecureCode
+          ? [{ id: 'EX-03', title: 'Find the injection: secure code lab', minutes: 60 }]
+          : [{ id: 'EX-07', title: 'Feedback in the SBI format', minutes: 30 }],
+        outcomes: isSecureCode
+          ? [
+              {
+                id: 'O4',
+                wording: 'Security, compliance and intellectual-property protection.',
+                match: 'strong',
+              },
+            ]
+          : [
+              {
+                id: 'O7',
+                wording: 'Receiving, processing and acting on feedback.',
+                match: 'strong',
+              },
+            ],
+        why: isSecureCode
+          ? 'This lab has you hunt for an injection flaw, which gives hands-on practice where the score was low.'
+          : 'This exercise practises acting on feedback, which targets the low score in this goal.',
+      };
+    });
+  const strong = scores
+    .filter((row) => row.score !== null && row.score >= 4)
+    .map((row) => ({ goal: row.goal, label: row.label, score: row.score }));
+  const notAssessed = scores
+    .filter((row) => row.score === null)
+    .map((row) => ({ goal: row.goal, label: row.label }));
+
   return {
     run_id: runId,
     status,
     trainee_id: traineeId,
-    assessed_count: 3,
-    goal_count: 4,
+    overview:
+      'Most goals are met. Two goals need attention: secure code (G03) and giving and receiving feedback (G07), both scored 2 out of 5. Both gaps link to strong outcomes, so they are worth prioritising.',
+    assessed_count: scores.filter((row) => row.score !== null).length,
+    goal_count: scores.length,
     gap_threshold: GAP_THRESHOLD,
-    scores: [
-      { goal: 'G1', label: 'Client listening', score: 4, sources: ['interview: Q2'] },
-      { goal: 'G2', label: 'Estimation', score: 2, sources: ['feedback: F-11', 'interview: Q5'] },
-      { goal: 'G3', label: 'Escalation handling', score: 3, sources: ['roleplay: R-03'] },
-      { goal: 'G4', label: 'Written updates', score: null, sources: [] },
-    ],
-    gaps: [
-      {
-        goal: 'G2',
-        label: 'Estimation',
-        score: 2,
-        severity: 'moderate',
-        evidence: ['feedback: F-11', 'interview: Q5'],
-        outcome_match: 'partial',
-        exercises: [{ id: 'EX-07', title: 'Estimate a small change list', minutes: 30 }],
-        outcomes: [{ id: 'OUT-3', wording: 'Gives a range with stated assumptions' }],
-        why: 'Estimation scored 2, below the gap threshold.',
-      },
-    ],
-    strong: [{ goal: 'G1', label: 'Client listening', score: 4 }],
-    not_assessed: [{ goal: 'G4', label: 'Written updates' }],
+    scores,
+    gaps,
+    strong,
+    not_assessed: notAssessed,
     review_required: true,
-    versions: { rules: 'r-0.3', mapping: 'm-draft-1', content_library: 'cl-2026-10' },
-    skill_gaps:
-      'G2 Estimation: score 2, severity moderate\n' +
-      '  Evidence: feedback: F-11, interview: Q5\n' +
-      '  Outcome OUT-3 (partial match): Gives a range with stated assumptions.\n',
-    recommendations:
-      'G2 Estimation (score 2)\n' +
-      '  Exercise: EX-07 Estimate a small change list (30 min)\n' +
-      '  Why: Estimation scored 2, below the gap threshold.\n',
-    report:
-      `Trainee ${traineeId}\n\n` +
-      'Assessed 3 of 4 goals.\n\n' +
-      'Scores\n' +
-      '  G1 Client listening                     4\n' +
-      '  G2 Estimation                            2\n' +
-      '  G3 Escalation handling                   3\n' +
-      '  G4 Written updates              not assessed\n\n' +
-      'Areas to work on\n' +
-      '  G2 Estimation: score 2, severity moderate\n' +
-      '    Exercise: EX-07 Estimate a small change list (30 min)\n' +
-      '    Outcome OUT-3 (partial match): Gives a range with stated assumptions.\n\n' +
-      'Strong areas (score 4 or above)\n' +
-      '  G1 Client listening: 4\n\n' +
-      'Not assessed\n' +
-      '  G4 Written updates\n',
+    versions: { rules: '0.1.0', mapping: '0.2.0', content_library: 'builtin:sha256:mock' },
   };
 }
 
 type StoredRun = { status: RunStatus; summary: Summary | null };
 
-// Trainees with an assessment. T-06 has a full report; T-09 has an old assessment with no summary.
+// Trainees with a result. T-06 has a full result; T-09 has a section missing (409).
 const store = new Map<string, StoredRun>([
   ['T-06', { status: 'pending_review', summary: summaryFor('T-06', 'run-0006', 'pending_review') }],
   ['T-09', { status: 'approved', summary: null }],
@@ -104,10 +147,10 @@ export function createMockApi(): Agent4Api {
       await sleep();
       const record = store.get(traineeId);
       if (!record) {
-        throw new ApiError(404, `No assessment for ${traineeId} yet.`);
+        throw new ApiError(404, `No results for ${traineeId}.`);
       }
       if (!record.summary) {
-        throw new ApiError(409, 'The stored assessment has no exercise details.');
+        throw new ApiError(409, 'A section (A, B or C) has no scores for this trainee.');
       }
       return record.summary;
     },
@@ -123,6 +166,12 @@ export function createMockApi(): Agent4Api {
         summary: summaryFor(traineeId, runId, 'pending_review'),
       });
       return { run_id: runId, status: 'pending_review' };
+    },
+
+    async downloadPdf(summary) {
+      await sleep();
+      const { buildReportPdf } = await import('../reportPdf');
+      return buildReportPdf(summary);
     },
 
     async submitReview(runId, body) {
