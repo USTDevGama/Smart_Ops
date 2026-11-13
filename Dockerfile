@@ -14,13 +14,13 @@ ARG VITE_AGENT2_USE_MOCKS=true
 ENV VITE_AGENT2_USE_MOCKS=$VITE_AGENT2_USE_MOCKS
 RUN npm run build
 
-# ---- runtime: nginx serves the static files and proxies /agent2-api, /agent3-api and /agent4-api ----
+# ---- runtime: nginx serves the static files and proxies /agent1-api, /agent2-api, /agent3-api and /agent4-api ----
 FROM nginx:1.27-alpine
 # The image's entrypoint runs envsubst on /etc/nginx/templates/*.template at start,
-# so AGENT3_API_URL is set at runtime (server .env), not baked into the image.
-# The filter limits substitution to that one variable, so nginx's own $host, $uri,
+# so AGENT{1,2,3,4}_API_URL are set at runtime (server .env), not baked into the image.
+# The filter limits substitution to those variables, so nginx's own $host, $uri,
 # $remote_addr etc. are never touched. Output goes to /etc/nginx/conf.d/default.conf.
-ENV NGINX_ENVSUBST_FILTER='AGENT[234]_API_URL'
+ENV NGINX_ENVSUBST_TEMPLATE_VARS='AGENT1_API_URL AGENT2_API_URL AGENT3_API_URL AGENT4_API_URL'
 # Lets the deploy job prune only this app's dangling images, never another pod's.
 LABEL app=smart-ops-dashboard
 COPY deploy/nginx.conf.template /etc/nginx/templates/default.conf.template

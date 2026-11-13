@@ -1,5 +1,5 @@
-# Rendered by the nginx image entrypoint (envsubst). Only ${AGENT2_API_URL}, ${AGENT3_API_URL} and ${AGENT4_API_URL} are substituted;
-# nginx's own $variables are left alone.
+# Rendered by the nginx image entrypoint (envsubst). Only ${AGENT1_API_URL}, ${AGENT2_API_URL},
+# ${AGENT3_API_URL} and ${AGENT4_API_URL} are substituted; nginx's own $variables are left alone.
 server {
     listen 8080;
     server_name _;
@@ -15,6 +15,19 @@ server {
         access_log off;
         default_type text/plain;
         return 200 "ok\n";
+    }
+
+    # Smart_Ops_Pod1 FastAPI (agent 1, Viva Agent). Served same-origin like agent 3/4. The prefix
+    # is stripped, so /agent1-api/api/health reaches the Pod 1 API as /api/health.
+    location /agent1-api/ {
+        proxy_pass ${AGENT1_API_URL}/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 300s;
+        client_max_body_size 25m;
     }
 
     # Smart_Ops_Pod3 FastAPI. The backend has no CORS, so it is served same-origin here
@@ -56,6 +69,14 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_read_timeout 300s;
         client_max_body_size 1m;
+    }
+
+    # .mjs files (ES module workers) are not in nginx's default mime.types;
+    # without this they serve as application/octet-stream and browsers reject them.
+    location ~* \.mjs$ {
+        add_header Cache-Control "public, max-age=31536000, immutable";
+        default_type text/javascript;
+        try_files $uri =404;
     }
 
     # Hashed build assets never change: cache hard.

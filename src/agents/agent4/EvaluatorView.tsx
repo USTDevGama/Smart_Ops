@@ -155,17 +155,21 @@ function TraineeDetail({ traineeId, onBack }: { traineeId: string; onBack: () =>
   const { user } = useAuth();
   const [summary, setSummary] = useState<Summary | null>(null);
   const [missing, setMissing] = useState(false);
+  const [incomplete, setIncomplete] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
 
   const load = useCallback(async () => {
     setError(null);
     setMissing(false);
+    setIncomplete(false);
     try {
       setSummary(await api.getSummary(traineeId));
     } catch (err) {
       if (err instanceof ApiError && err.status === 404) {
         setMissing(true);
+      } else if (err instanceof ApiError && err.status === 409) {
+        setIncomplete(true);
       } else if (err instanceof ApiError) {
         setError(summaryErrorText(err.status, 'admin'));
       } else {
@@ -206,7 +210,12 @@ function TraineeDetail({ traineeId, onBack }: { traineeId: string; onBack: () =>
       )}
 
       {error && <Alert kind="error">{error}</Alert>}
-      {!summary && !error && !missing && <Spinner label="Loading results" />}
+      {!summary && !error && !missing && !incomplete && <Spinner label="Loading results" />}
+      {incomplete && (
+        <div className={styles.card}>
+          <p>{traineeId} needs to complete all assessments before results can be shown.</p>
+        </div>
+      )}
       {missing && (
         <div className={styles.card}>
           <p>No assessment for {traineeId} yet.</p>

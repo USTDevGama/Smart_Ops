@@ -1,28 +1,46 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { useAuth } from '@/auth';
 import { Alert } from '@/components/ui';
+import { Agent1ApiProvider, isMockMode } from './api';
+import { ReviewPage } from './admin/ReviewPage';
+import { BriefingPage } from './trainee/BriefingPage';
+import { CurriculumPage } from './trainee/CurriculumPage';
+import { InterviewPage } from './trainee/InterviewPage';
+import './theme.css';
 
 /**
- * Agent 1: entry point owned by Team 1. Routes are relative to /agents/agent1.
- * Split views by role the same way agent3 does (trainee/ and admin/ folders).
+ * Agent 1: Viva Agent (port of Smart_Ops_Pod1's React UI).
+ * Roles are strictly separate: trainees (candidates) submit/update their own curriculum, are taken
+ * straight into the briefing and interview, then see a thank-you screen and return to the agents
+ * home page. Admins only review completed sessions (curriculum, transcript, report) and accept or
+ * reject the agent's evaluation. See ./README.md and ./MIGRATION.md.
  */
-function Landing() {
-  const { user } = useAuth();
-  return (
-    <div className="stack">
-      <h1>Agent 1</h1>
-      <Alert kind="info">
-        Team 1 builds this agent here. You are signed in as {user?.name} ({user?.role}).
-      </Alert>
-    </div>
-  );
-}
-
 export default function Agent1() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
+
   return (
-    <Routes>
-      <Route index element={<Landing />} />
-      <Route path="*" element={<Navigate to="." replace />} />
-    </Routes>
+    <Agent1ApiProvider>
+      <div className="viva stack">
+        {isMockMode && (
+          <Alert kind="info">Running on mock data. Nothing is sent to a server.</Alert>
+        )}
+        <Routes>
+          {isAdmin ? (
+            <>
+              <Route index element={<ReviewPage />} />
+              <Route path="*" element={<Navigate to="." replace />} />
+            </>
+          ) : (
+            <>
+              <Route index element={<CurriculumPage />} />
+              <Route path="session/:sessionId/briefing" element={<BriefingPage />} />
+              <Route path="session/:sessionId/interview" element={<InterviewPage />} />
+              <Route path="*" element={<Navigate to="." replace />} />
+            </>
+          )}
+        </Routes>
+      </div>
+    </Agent1ApiProvider>
   );
 }

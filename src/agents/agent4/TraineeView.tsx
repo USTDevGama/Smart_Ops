@@ -13,6 +13,7 @@ type Result =
   | { kind: 'idle' }
   | { kind: 'loading' }
   | { kind: 'none'; traineeId: string }
+  | { kind: 'incomplete' }
   | { kind: 'error'; text: string }
   | { kind: 'ok'; summary: Summary };
 
@@ -34,6 +35,8 @@ export function TraineeView() {
     } catch (error) {
       if (error instanceof ApiError && error.status === 404) {
         setResult({ kind: 'none', traineeId: id });
+      } else if (error instanceof ApiError && error.status === 409) {
+        setResult({ kind: 'incomplete' });
       } else if (error instanceof ApiError) {
         setResult({ kind: 'error', text: summaryErrorText(error.status, 'trainee') });
       } else {
@@ -72,6 +75,9 @@ export function TraineeView() {
         {result.kind === 'loading' && <Spinner label="Loading results" />}
         {result.kind === 'none' && (
           <p className={styles.empty}>{summaryErrorText(404, 'trainee')}</p>
+        )}
+        {result.kind === 'incomplete' && (
+          <p className={styles.empty}>Complete all your assessments to view your results.</p>
         )}
         {result.kind === 'error' && <Alert kind="error">{result.text}</Alert>}
         {result.kind === 'ok' && <ResultsBlock summary={result.summary} />}
