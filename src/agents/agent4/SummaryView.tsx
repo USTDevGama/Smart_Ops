@@ -1,4 +1,5 @@
 import { useRef } from 'react';
+import ReactMarkdown from 'react-markdown';
 
 import type { GapSummary, RunStatus, ScoreRow, Summary } from './api';
 import styles from './SummaryView.module.css';
@@ -92,18 +93,26 @@ function TextSection({
   heading,
   text,
   sectionRef,
+  markdown,
 }: {
   id: string;
   heading: string;
   text: string;
   sectionRef?: React.Ref<HTMLElement>;
+  markdown?: boolean;
 }) {
   return (
     <section ref={sectionRef} className={styles.card} aria-labelledby={id}>
       <div className={styles.sectionHead}>
         <h2 id={id}>{heading}</h2>
       </div>
-      <pre className={styles.report}>{text}</pre>
+      {markdown ? (
+        <div className={styles.markdown}>
+          <ReactMarkdown>{text}</ReactMarkdown>
+        </div>
+      ) : (
+        <pre className={styles.report}>{text}</pre>
+      )}
     </section>
   );
 }
@@ -199,6 +208,7 @@ export function ResultsBlock({ summary }: { summary: Summary }) {
           heading="Assessment report"
           text={summary.report}
           sectionRef={reportRef}
+          markdown
         />
       </div>
     </div>
