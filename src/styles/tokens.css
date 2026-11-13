@@ -167,6 +167,19 @@
   --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Consolas, 'Liberation Mono', monospace;
 
+  /* ── Portal home + top bar (restyle). Used by src/home and src/shell only. ── */
+  --portal-bg: #fcfcfa;
+  --portal-hover: #f2f8f8;
+  --portal-ink: #1a1a1a;
+  --portal-ink-soft: #5a5a5a;
+  --portal-accent: #00778b;
+  --portal-line: #dbdbd9;
+  --portal-badge-bg: #e3efef;
+  --portal-badge-border: #bfd8d8;
+  --font-heading: 'Archivo', system-ui, 'Segoe UI', Arial, sans-serif;
+  --font-body: 'Figtree', Aptos, Arial, sans-serif;
+  --font-label: 'IBM Plex Mono', ui-monospace, Consolas, monospace;
+
   /* ── Radius / spacing (INFERRED from swatch + icon geometry) ── */
   --radius-sm: 4px;
   --radius-md: 8px;

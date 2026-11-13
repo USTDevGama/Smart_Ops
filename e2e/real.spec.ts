@@ -24,7 +24,7 @@ async function signIn(page: Page, name: string, role: 'Trainee' | 'Admin') {
   await page.getByLabel('Your name').fill(name);
   await page.getByLabel('Role').selectOption(role);
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
-  await page.getByRole('button', { name: /Stakeholder Roleplay/ }).click();
+  await page.getByRole('link', { name: /Stakeholder Roleplay/ }).click();
   await expect(page.getByText('Running on mock data')).toHaveCount(0); // proves the real API is used
 }
 

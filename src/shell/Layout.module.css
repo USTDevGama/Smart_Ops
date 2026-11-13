@@ -3,16 +3,23 @@
   display: flex;
   flex-direction: column;
 }
+.shellHome {
+  background: var(--portal-bg);
+}
 .header {
+  border-bottom: 1px solid var(--portal-line);
+  background: var(--color-bg-surface);
+}
+.shellHome .header {
+  background: var(--portal-bg);
+}
+.headerInner {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
-  flex-wrap: wrap;
   height: 64px;
-  padding: 0 var(--space-5);
-  background: var(--color-bg-surface);
-  border-bottom: 1px solid var(--color-header-border);
+  padding: 0 clamp(16px, 2.5vw, 40px);
 }
 .brand {
   display: flex;
@@ -21,24 +28,42 @@
 .home {
   display: flex;
   align-items: center;
-  gap: 12px;
-  color: var(--color-brand-title);
+  gap: 16px;
+  color: var(--portal-ink);
   text-decoration: none;
 }
 .logo {
   display: block;
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
+}
+.divider {
+  width: 1px;
+  height: 24px;
+  background: var(--portal-line);
 }
 .title {
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--color-brand-title);
+  font: 600 17px/24px var(--font-body);
+  color: var(--portal-ink);
+  white-space: nowrap;
 }
 .account {
+  margin-left: auto;
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-3);
+}
+.userName {
+  font: 400 14px/20px var(--font-body);
+  color: var(--portal-ink-soft);
+}
+.role {
+  padding: 3px 10px;
+  background: var(--portal-badge-bg);
+  border: 1px solid var(--portal-badge-border);
+  border-radius: 6px;
+  font: 600 13px/18px var(--font-body);
+  color: var(--portal-ink);
 }
 .menu {
   position: relative;
@@ -52,9 +77,9 @@
   padding: 0;
   border: 0;
   border-radius: 50%;
-  background: var(--color-avatar-bg);
-  color: var(--color-avatar-text);
-  font: 600 13px/20px var(--font-sans);
+  background: var(--dte-500);
+  color: var(--color-text-on-primary);
+  font: 600 15px/20px var(--font-body);
   cursor: pointer;
 }
 .avatar:focus-visible {
@@ -72,6 +97,17 @@
   border-radius: var(--radius-md);
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
   z-index: 20;
+  animation: dropdown-in 150ms ease-out;
+}
+@keyframes dropdown-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 .menuItem {
   display: block;
@@ -94,4 +130,9 @@
   max-width: 1200px;
   margin: 0 auto;
   padding: var(--space-5);
+}
+/* Home page: wider column, same side padding as the top bar. */
+.mainHome {
+  max-width: none;
+  padding: 0 clamp(16px, 2.5vw, 40px);
 }

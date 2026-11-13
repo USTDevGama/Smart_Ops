@@ -10,24 +10,27 @@ export const AGENTS: AgentDefinition[] = [
   {
     id: 'agent1',
     name: 'Viva Agent',
-    description:
-      'Candidates submit their curriculum, then take an adaptive spoken interview. Admins review the curriculum, transcript and report, and accept or reject the agent-scored evaluation.',
+    description: 'Candidates submit their curriculum, then take an adaptive spoken interview.',
+    note: {
+      label: 'Admins',
+      text: 'Review the curriculum, transcript and report, and accept or reject the agent-scored evaluation.',
+    },
     roles: ['trainee', 'admin'],
     component: lazy(() => import('./agent1')),
   },
   {
     id: 'agent2',
     name: 'Bias Flagging Agent',
-    description:
-      'Check feedback text against bias flags and review low-confidence findings. Admins manage the flags.',
+    description: 'Check feedback text against bias flags and review low-confidence findings.',
+    note: { label: 'Admins', text: 'Manage the flags.' },
     roles: ['trainee', 'admin'],
     component: lazy(() => import('./agent2')),
   },
   {
     id: 'agent3',
     name: 'Stakeholder Roleplay',
-    description:
-      'Practise handling a difficult client in a simulated chat, then get a report. Admins configure and review.',
+    description: 'Practise handling a difficult client in a simulated chat, then get a report.',
+    note: { label: 'Admins', text: 'Configure and review.' },
     roles: ['trainee', 'admin'],
     component: lazy(() => import('./agent3')),
   },
@@ -36,7 +39,8 @@ export const AGENTS: AgentDefinition[] = [
     name: 'Adaptive Skill-Gap Diagnostic Agent',
     headerTitle: 'ASGD agent',
     description:
-      'Asks about a trainee and answers from the trainee database: skill gaps, recommended exercises and the full report. Every report waits for a human review.',
+      'Asks about a trainee and answers from the trainee database: skill gaps, recommended exercises and the full report.',
+    note: { label: 'Review', text: 'Every report waits for a human review.' },
     roles: ['trainee', 'admin'],
     component: lazy(() => import('./agent4')),
   },

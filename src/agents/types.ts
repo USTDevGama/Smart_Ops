@@ -9,6 +9,8 @@ export type AgentDefinition = {
   /** Shorter name shown in the top bar while the agent is open. Falls back to "Agent Portal". */
   headerTitle?: string;
   description: string;
+  /** Optional second block on the home card, e.g. what admins or reviewers do. */
+  note?: { label: string; text: string };
   /** Roles that see the card and may open the agent. Role-specific pages are the agent's own business. */
   roles: Role[];
   /** Default export of the agent's index.tsx. Loaded lazily so teams' bundles stay separate. */
