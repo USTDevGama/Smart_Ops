@@ -71,6 +71,14 @@ server {
         client_max_body_size 1m;
     }
 
+    # .mjs files (ES module workers) are not in nginx's default mime.types;
+    # without this they serve as application/octet-stream and browsers reject them.
+    location ~* \.mjs$ {
+        add_header Cache-Control "public, max-age=31536000, immutable";
+        default_type text/javascript;
+        try_files $uri =404;
+    }
+
     # Hashed build assets never change: cache hard.
     location /assets/ {
         add_header Cache-Control "public, max-age=31536000, immutable";
