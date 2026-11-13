@@ -238,32 +238,44 @@ export function CurriculumPage() {
   }
 
   return (
-    <div className="card narrow">
+    <div className="card upload-card">
       <div className="upload-header">
         <h1>Viva Interview</h1>
         <p className="muted">Upload or update your curriculum to begin</p>
       </div>
 
-      <div className="field">
-        <label htmlFor="cfile">Upload curriculum PDF</label>
-        <input id="cfile" type="file" accept="application/pdf" onChange={onFile} disabled={busy} />
-        {fileNote && <span className="muted small">{fileNote}</span>}
-      </div>
+      <div className="upload-body">
+        <div className="upload-col">
+          <div className="field">
+            <label htmlFor="cfile">Upload curriculum PDF</label>
+            <input
+              id="cfile"
+              type="file"
+              accept="application/pdf"
+              onChange={onFile}
+              disabled={busy}
+            />
+            {fileNote && <span className="muted small">{fileNote}</span>}
+          </div>
+        </div>
 
-      <div className="divider">
-        <span>or</span>
-      </div>
+        <div className="upload-divider">
+          <span className="muted small">or</span>
+        </div>
 
-      <div className="field">
-        <label htmlFor="ctext">Paste curriculum text</label>
-        <textarea
-          id="ctext"
-          rows={8}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          disabled={busy}
-          placeholder="Paste your curriculum content here..."
-        />
+        <div className="upload-col">
+          <div className="field">
+            <label htmlFor="ctext">Paste curriculum text</label>
+            <textarea
+              id="ctext"
+              rows={5}
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              disabled={busy}
+              placeholder="Paste your curriculum content here..."
+            />
+          </div>
+        </div>
       </div>
 
       {error && <div className="alert error">{error}</div>}

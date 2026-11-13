@@ -221,6 +221,54 @@
   max-width: 860px;
   margin-inline: auto;
 }
+.viva .upload-card {
+  margin-inline: auto;
+}
+.viva .upload-card .upload-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+.viva .upload-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+.viva .upload-col {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.viva .upload-divider {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding-top: 28px;
+}
+.viva .upload-divider::before,
+.viva .upload-divider::after {
+  content: '';
+  flex: 1;
+  width: 1px;
+  background: var(--viva-border);
+}
+@media (max-width: 680px) {
+  .viva .upload-body {
+    grid-template-columns: 1fr;
+  }
+  .viva .upload-divider {
+    flex-direction: row;
+    padding-top: 0;
+  }
+  .viva .upload-divider::before,
+  .viva .upload-divider::after {
+    width: auto;
+    height: 1px;
+    flex: 1;
+  }
+}
 
 .viva .field {
   display: flex;
