@@ -13,7 +13,7 @@ async function signIn(page: Page, name: string, role: 'Trainee' | 'Admin') {
 test('home shows the card for both roles and opens agent2', async ({ page }) => {
   for (const role of ['Trainee', 'Admin'] as const) {
     await signIn(page, 'tester', role);
-    await page.getByRole('button', { name: /Bias Flagging Agent/ }).click();
+    await page.getByRole('link', { name: /Bias Flagging Agent/ }).click();
     await expect(page).toHaveURL(/\/agents\/agent2$/);
     await page.evaluate(() => sessionStorage.clear());
   }
@@ -21,7 +21,7 @@ test('home shows the card for both roles and opens agent2', async ({ page }) => 
 
 test('trainee sees only the run page and can run and review', async ({ page }) => {
   await signIn(page, 'tester', 'Trainee');
-  await page.getByRole('button', { name: /Bias Flagging Agent/ }).click();
+  await page.getByRole('link', { name: /Bias Flagging Agent/ }).click();
   await expect(page.getByRole('heading', { name: 'Bias Flagging Agent', level: 1 })).toBeVisible();
   await expect(page.getByText('Running on mock data')).toBeVisible();
   await expect(page.getByRole('tab', { name: 'New run' })).toBeVisible();
@@ -62,7 +62,7 @@ test('trainee sees only the run page and can run and review', async ({ page }) =
 
 test('admin sees only flag management: add, deactivate, delete', async ({ page }) => {
   await signIn(page, 'tester', 'Admin');
-  await page.getByRole('button', { name: /Bias Flagging Agent/ }).click();
+  await page.getByRole('link', { name: /Bias Flagging Agent/ }).click();
   await expect(page.getByRole('heading', { name: 'Flag management' })).toBeVisible();
   await expect(page.getByRole('tab', { name: 'New run' })).toHaveCount(0);
 

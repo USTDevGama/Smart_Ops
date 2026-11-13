@@ -9,7 +9,7 @@ async function signIn(page: Page, name: string, role: 'Trainee' | 'Admin') {
 
 test('trainee: upload resume, start chat, send answer, end chat', async ({ page }) => {
   await signIn(page, 'anna', 'Trainee');
-  await page.getByRole('button', { name: /Stakeholder Roleplay/ }).click();
+  await page.getByRole('link', { name: /Stakeholder Roleplay/ }).click();
   await expect(page.getByText('Running on mock data')).toBeVisible();
 
   // Resume upload (mock extraction takes about 2 seconds)
@@ -60,7 +60,7 @@ test('trainee: upload resume, start chat, send answer, end chat', async ({ page 
 
 test('admin sees only admin pages', async ({ page }) => {
   await signIn(page, 'boss', 'Admin');
-  await page.getByRole('button', { name: /Stakeholder Roleplay/ }).click();
+  await page.getByRole('link', { name: /Stakeholder Roleplay/ }).click();
   await expect(page.getByRole('link', { name: 'Set the stage' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'My resume' })).toHaveCount(0);
 });

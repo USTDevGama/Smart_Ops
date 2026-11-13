@@ -44,21 +44,21 @@ describe('login and routing', () => {
   it('shows the four agents after login', async () => {
     renderAt('/login');
     await signIn('Trainee');
-    expect(await screen.findByRole('heading', { name: 'Choose an agent' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Choose an agent.' })).toBeInTheDocument();
     for (const name of [
       'Viva Agent',
       'Bias Flagging Agent',
       'Stakeholder Roleplay',
       'Adaptive Skill-Gap Diagnostic Agent',
     ]) {
-      expect(screen.getByRole('button', { name: new RegExp(name) })).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: new RegExp(name) })).toBeInTheDocument();
     }
   });
 
   it('opens an agent from its card', async () => {
     renderAt('/login');
     await signIn('Trainee');
-    await userEvent.click(await screen.findByRole('button', { name: /Viva Agent/ }));
+    await userEvent.click(await screen.findByRole('link', { name: /Viva Agent/ }));
     expect(await screen.findByRole('heading', { name: 'Viva Interview' })).toBeInTheDocument();
   });
 });
@@ -67,7 +67,7 @@ describe('role separation in agent 3', () => {
   it('shows trainee pages only to a trainee', async () => {
     renderAt('/login');
     await signIn('Trainee');
-    await userEvent.click(await screen.findByRole('button', { name: /Stakeholder Roleplay/ }));
+    await userEvent.click(await screen.findByRole('link', { name: /Stakeholder Roleplay/ }));
     expect(await screen.findByRole('link', { name: 'My resume' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Chat with the client' })).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Set the stage' })).not.toBeInTheDocument();
@@ -77,7 +77,7 @@ describe('role separation in agent 3', () => {
   it('shows admin pages only to an admin', async () => {
     renderAt('/login');
     await signIn('Admin', 'boss');
-    await userEvent.click(await screen.findByRole('button', { name: /Stakeholder Roleplay/ }));
+    await userEvent.click(await screen.findByRole('link', { name: /Stakeholder Roleplay/ }));
     expect(await screen.findByRole('link', { name: 'Set the stage' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Review chats' })).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'My resume' })).not.toBeInTheDocument();
