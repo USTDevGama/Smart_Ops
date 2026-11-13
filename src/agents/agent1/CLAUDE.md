@@ -12,21 +12,30 @@ The rules in the root `CLAUDE.md` apply. This file adds what is specific to this
 
 This folder receives Team 1's **existing UI**. The old UI is read only: never edit it.
 
-- Old UI location: _path or repository_. Run it with: _command_.
-- Backend it calls: _base URL_ and how to run it locally.
+- Old UI location: `Smart_Ops_Pod1/frontend` (sibling repo). Run it with `docker compose up` from that repo's root.
+- Backend it calls: Pod1's own FastAPI ("Viva Agent"), `http://localhost:8000` locally (same `docker compose up`).
 - Screen list and progress: `MIGRATION.md` (keep it current).
 
 ## What this agent does
 
-_One paragraph: who uses it and what for. Then rename the card in `registry.ts`._
+Upload or paste a curriculum; the backend derives tracks, an admin starts a candidate session and
+shares the link, the candidate takes an adaptive spoken/typed interview, and an admin accepts or
+rejects the agent-scored report (human-in-the-loop). See `registry.ts` for the card text.
 
 ## Roles and pages
 
-Only a landing page exists so far. Roles are strictly separate: put pages under `trainee/` and `admin/` and choose them from `useAuth().user.role` in `index.tsx`, as `src/agents/agent3` does.
+Roles are strictly separate: admin gets `admin/IntakePage.tsx` (upload + tracks + start) and
+`admin/ReviewPage.tsx` (HITL review); trainee gets `trainee/LandingPage.tsx`,
+`trainee/BriefingPage.tsx` and `trainee/InterviewPage.tsx`, chosen from `useAuth().user.role` in
+`index.tsx`, as `src/agents/agent3` does. See `MIGRATION.md` for an open question about how the old
+UI's unauthenticated candidate flow maps onto the shell's login.
 
 ## Backend
 
-_None yet._ Follow `src/agents/agent3/api/` (interface + real client + mock) and use `useAuth().getAuthHeaders()`. Add a proxy entry for your backend in `vite.config.ts`.
+`api/api.ts` (`Agent1Api` interface), `api/httpApi.ts` (real client), `api/mockApi.ts` (in-memory
+stand-in) - same shape as `src/agents/agent3/api/` and `src/agents/agent4/api/`. Auth headers come
+from `useAuth().getAuthHeaders()`. The dev proxy entry (`/agent1-api` in `vite.config.ts`) and the
+prod nginx `location` (`deploy/nginx.conf.template`) already exist.
 
 ## Run and test
 

@@ -5,6 +5,8 @@ import { fileURLToPath } from 'node:url';
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
+  // Smart_Ops_Pod1 FastAPI (agent 1, Viva Agent). Port 8000 is Pod1's docker-compose dev default.
+  const agent1Target = env.VITE_AGENT1_API_URL || 'http://localhost:8000';
   // Smart_Ops_Pod3 FastAPI. The backend has no CORS, so the dev server proxies it.
   const apiTarget = env.VITE_AGENT3_API_URL || 'http://localhost:8000';
   // Smart_Ops_Pod4 FastAPI (agent 4, ASGD). Port 8010 is the Pod 4 dev default.
@@ -19,6 +21,11 @@ export default defineConfig(({ mode }) => {
     server: {
       port: 5173,
       proxy: {
+        '/agent1-api': {
+          target: agent1Target,
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/agent1-api/, ''),
+        },
         '/agent2-api': {
           target: agent2ApiTarget,
           changeOrigin: true,
