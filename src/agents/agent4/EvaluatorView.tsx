@@ -199,6 +199,21 @@ function TraineeDetail({ traineeId, onBack }: { traineeId: string; onBack: () =>
     <div className={styles.page}>
       <div className={styles.crumb}>
         <Button variant="secondary" compact onClick={onBack}>
+          <svg
+            className={styles.backIcon}
+            width="14"
+            height="14"
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+            focusable="false"
+          >
+            <path d="M10 3 5 8l5 5" />
+          </svg>
           Back to all trainees
         </Button>
       </div>

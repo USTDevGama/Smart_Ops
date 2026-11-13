@@ -63,25 +63,6 @@ export function createHttpApi(getAuthHeaders: () => Record<string, string>): Age
       request<{ run_id: string; status: RunStatus }>(`${traineePath(id)}/assessments`, {
         method: 'POST',
       }),
-    downloadPdf: async (summary) => {
-      const response = await fetch(`${BASE}/v1/reports/pdf`, {
-        method: 'POST',
-        headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
-        body: JSON.stringify(summary),
-      }).catch(() => {
-        throw new ApiError(0, 'The agent service could not be reached.');
-      });
-      if (!response.ok) {
-        // 503: the server's PDF engine is not installed or is unavailable.
-        throw new ApiError(
-          response.status,
-          response.status === 503
-            ? 'The PDF service is not available right now. Try again in a moment.'
-            : `The PDF could not be made (${response.status}).`,
-        );
-      }
-      return response.blob();
-    },
     submitReview: (runId, body: ReviewBody) =>
       request<{ run_id: string; status: RunStatus }>(
         `/v1/diagnostics/${encodeURIComponent(runId)}/review`,

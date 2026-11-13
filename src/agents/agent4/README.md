@@ -45,13 +45,13 @@ uses Figtree and figures use IBM Plex Mono. The palette is in `theme.css`, not i
 Calls go to the Pod 4 API (`Smart_Ops_Pod4`, FastAPI) through the Vite proxy `/agent4-api`,
 which forwards to `VITE_AGENT4_API_URL` (default `http://localhost:8010`).
 
-| Method | Path                              | Used for                                                                   |
-| ------ | --------------------------------- | -------------------------------------------------------------------------- |
-| GET    | `/v1/trainees`                    | Trainee list                                                               |
-| GET    | `/v1/trainees/{id}/summary`       | Results (404: no results; 409: a section A, B or C is missing; 503: retry) |
-| POST   | `/v1/trainees/{id}/assessments`   | Run an assessment                                                          |
-| POST   | `/v1/diagnostics/{run_id}/review` | Approve or reject                                                          |
-| POST   | `/v1/reports/pdf`                 | Download the PDF, built from the summary the screen already has            |
+| Method | Path                              | Used for                                                                                    |
+| ------ | --------------------------------- | ------------------------------------------------------------------------------------------- |
+| GET    | `/v1/trainees`                    | Trainee list                                                                                |
+| GET    | `/v1/trainees/{id}/summary`       | Results (404: no results; 409: a section A, B or C is missing; 503: retry)                  |
+| POST   | `/v1/trainees/{id}/assessments`   | Run an assessment                                                                           |
+| POST   | `/v1/diagnostics/{run_id}/review` | Approve or reject                                                                           |
+| (none) | PDF                               | Built in the browser from the summary (`reportPdf.ts`); the server PDF endpoint is not used |
 
 Auth headers come from `useAuth().getAuthHeaders()`. The Pod 4 API needs no token when
 its ZITADEL settings are empty and `ASGD_ENV` is `local` or `dev` (see its `docs/sign-in.md`).

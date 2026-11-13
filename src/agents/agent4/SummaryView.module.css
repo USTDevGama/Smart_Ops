@@ -295,9 +295,17 @@
   color: var(--ust-ink);
   font-weight: 600;
 }
+/* Several outcomes: a bulleted list. */
 .outcomes {
   margin: 4px 0 0;
   padding-left: 20px;
+  list-style: disc;
+  font-size: 14px;
+  color: var(--ust-ink-soft);
+}
+/* One outcome: plain text, no bullet. */
+.outcomeText {
+  margin: 4px 0 0;
   font-size: 14px;
   color: var(--ust-ink-soft);
 }
