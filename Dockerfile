@@ -20,7 +20,7 @@ FROM nginx:1.27-alpine
 # so AGENT{1,2,3,4}_API_URL are set at runtime (server .env), not baked into the image.
 # The filter limits substitution to those variables, so nginx's own $host, $uri,
 # $remote_addr etc. are never touched. Output goes to /etc/nginx/conf.d/default.conf.
-ENV NGINX_ENVSUBST_FILTER='AGENT[1234]_API_URL'
+ENV NGINX_ENVSUBST_TEMPLATE_VARS='AGENT1_API_URL AGENT2_API_URL AGENT3_API_URL AGENT4_API_URL'
 # Lets the deploy job prune only this app's dangling images, never another pod's.
 LABEL app=smart-ops-dashboard
 COPY deploy/nginx.conf.template /etc/nginx/templates/default.conf.template
