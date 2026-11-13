@@ -252,9 +252,7 @@ function SessionDetail({
   const strengths = topics
     .flatMap((t) => t.solid.map((text) => ({ topic: t.topic, text })))
     .slice(0, 6);
-  const gaps = topics
-    .flatMap((t) => t.shaky.map((text) => ({ topic: t.topic, text })))
-    .slice(0, 6);
+  const gaps = topics.flatMap((t) => t.shaky.map((text) => ({ topic: t.topic, text }))).slice(0, 6);
 
   async function downloadJson() {
     setDownloading(true);

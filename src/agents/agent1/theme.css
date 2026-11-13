@@ -22,7 +22,13 @@
 
   color: var(--viva-text);
   background: var(--viva-bg);
-  font: 400 15px/1.5 'Figtree', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
+  font:
+    400 15px/1.5 'Figtree',
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Arial,
+    sans-serif;
 }
 
 .viva * {
