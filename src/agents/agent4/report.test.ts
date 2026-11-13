@@ -15,6 +15,7 @@ import {
   recommendationCards,
   reportFileName,
   scoreStatus,
+  signalsFor,
   sortScoreRows,
   summaryErrorText,
 } from './reportView';
@@ -355,5 +356,29 @@ describe('minutes and card text', () => {
     expect(outcomeLine(T01.gaps[0].outcomes[0])).toBe(
       'Security, compliance and intellectual-property protection.',
     );
+  });
+});
+
+describe('signals', () => {
+  it('names the signal behind each score from its source', () => {
+    expect(signalsFor(['A_scores.G04=2']).map((s) => s.label)).toEqual(['Interview']);
+    expect(signalsFor(['C_scores.G08=2']).map((s) => s.label)).toEqual(['Roleplay']);
+    expect(signalsFor(['B_themes.G11=5']).map((s) => s.label)).toEqual(['Peer feedback']);
+  });
+
+  it('lists several signals in interview, peer feedback, roleplay order', () => {
+    expect(signalsFor(['C_scores.G06=3', 'B_themes.G06=4']).map((s) => s.label)).toEqual([
+      'Peer feedback',
+      'Roleplay',
+    ]);
+    expect(signalsFor(['A_scores.G10=2', 'C_scores.G10=3']).map((s) => s.label)).toEqual([
+      'Interview',
+      'Roleplay',
+    ]);
+  });
+
+  it('ignores a source it does not know', () => {
+    expect(signalsFor(['X_other.G01=3'])).toEqual([]);
+    expect(signalsFor([])).toEqual([]);
   });
 });

@@ -14,6 +14,8 @@ import {
   recommendationCards,
   reportFileName,
   scoreStatus,
+  signalsFor,
+  SIGNAL_LABEL,
   STATUS_PILL_TEXT,
   STATUS_TEXT,
   type RecommendationCard as Card,
@@ -80,6 +82,13 @@ function ScoreLine({ row, threshold }: { row: ScoreRow; threshold: number }) {
     <div className={isGap ? `${styles.score} ${styles.scoreGap}` : styles.score}>
       <div className={styles.goal}>
         {row.goal} {row.label}
+        <div className={styles.sigs}>
+          {signalsFor(row.sources).map((signal) => (
+            <span key={signal.code} className={`${styles.sig} ${styles[`sig${signal.code}`]}`}>
+              {signal.label}
+            </span>
+          ))}
+        </div>
       </div>
       <div className={styles.track} aria-hidden="true">
         {row.score !== null && (
@@ -220,6 +229,13 @@ export function ResultsBlock({ summary }: { summary: Summary }) {
           <h2 id="rpt-scores" className={styles.h2}>
             Scores by goal
           </h2>
+          <div className={styles.sigLegend} aria-label="Signals">
+            {(['A', 'B', 'C'] as const).map((code) => (
+              <span key={code} className={`${styles.sig} ${styles[`sig${code}`]}`}>
+                {SIGNAL_LABEL[code]}
+              </span>
+            ))}
+          </div>
           <div className={styles.scroll} tabIndex={0} aria-label="Scores by goal">
             {groups.map((group) => (
               <div key={group.status}>

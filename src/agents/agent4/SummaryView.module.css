@@ -3,6 +3,15 @@
    theme, so they are set once on .page. */
 
 .page {
+  /* Signal tags: interview (A), peer feedback (B), roleplay (C). From the design. */
+  --sig-a: #00677a;
+  --sig-a-bg: #e3f1f4;
+  --sig-b: #7a5a00;
+  --sig-b-line: #b58900;
+  --sig-b-bg: #fdf6e3;
+  --sig-c: #5b3a7a;
+  --sig-c-line: #7d5ba6;
+  --sig-c-bg: #f1ebf8;
   --gap: #8c2d21;
   --gap-soft: #fbe9e7;
   --notice-bg: #fdf6e3;
@@ -372,4 +381,41 @@
   .score {
     grid-template-columns: minmax(0, 1fr) 70px 36px 72px;
   }
+}
+
+/* Signal tags under each goal name, and the legend above the list. */
+.sigLegend,
+.sigs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.sigLegend {
+  margin: 0 0 8px;
+}
+.sigs {
+  gap: 4px;
+  margin-top: 4px;
+}
+.sig {
+  font: 600 11px/16px var(--ust-font-text);
+  padding: 0 6px;
+  border: 1px solid;
+  white-space: nowrap;
+  font-weight: 600;
+}
+.sigA {
+  color: var(--sig-a);
+  border-color: var(--sig-a);
+  background: var(--sig-a-bg);
+}
+.sigB {
+  color: var(--sig-b);
+  border-color: var(--sig-b-line);
+  background: var(--sig-b-bg);
+}
+.sigC {
+  color: var(--sig-c);
+  border-color: var(--sig-c-line);
+  background: var(--sig-c-bg);
 }
