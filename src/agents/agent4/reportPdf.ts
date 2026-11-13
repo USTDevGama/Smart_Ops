@@ -1,264 +1,401 @@
-// The PDF for mock mode only (VITE_USE_MOCKS=true). The real PDF is built by the server
-// (POST /v1/reports/pdf). This file draws the same sections as the results page, with jsPDF, so the
-// download still works offline. Every value comes from the summary.
+// The report as a PDF, built in the browser with jsPDF. The layout follows the trainee report design
+// (trainee-report 1.html), whose print view is the same page. Every value comes from the summary.
+// The screen does not call the server for the PDF.
 
 import { jsPDF } from 'jspdf';
 
 import type { Summary } from './api';
 import {
   exerciseTile,
+  formatMinutes,
   groupScoreRows,
   notAssessedNote,
   outcomeLine,
-  percentOfScale,
   recommendationCards,
   scoreStatus,
   STATUS_PILL_TEXT,
   STATUS_TEXT,
+  type RecommendationCard,
+  type ScoreStatus,
 } from './reportView';
 
-const PAGE_W = 595.28; // A4 width in points
-const PAGE_H = 841.89; // A4 height in points
-const MARGIN = 40;
-const CONTENT_W = PAGE_W - MARGIN * 2;
-const BOTTOM = PAGE_H - MARGIN;
+const PAGE_W = 595.28; // A4, in points
+const PAGE_H = 841.89;
+const MARGIN = 45; // about 16 mm, the design's print margin
+const W = PAGE_W - MARGIN * 2;
+const BOTTOM = PAGE_H - MARGIN - 16; // room left above the footer rule
 
-// Colours from the UST palette used on the page, as RGB.
 type Rgb = [number, number, number];
 const INK: Rgb = [26, 26, 26];
-const MUTED: Rgb = [90, 90, 90];
+const INK_SOFT: Rgb = [90, 90, 90];
 const HAIRLINE: Rgb = [219, 219, 217];
 const TRACK: Rgb = [236, 236, 234];
+const TILE_BG: Rgb = [242, 248, 248];
 const ACCENT: Rgb = [0, 119, 139];
 const ACCENT_DEEP: Rgb = [0, 60, 81];
-const ACCENT_SOFT: Rgb = [227, 239, 239];
+const ACCENT_SOFT: Rgb = [226, 239, 239];
 const GAP: Rgb = [140, 45, 33];
 const GAP_SOFT: Rgb = [251, 233, 231];
-const NOTICE: Rgb = [253, 246, 227];
+const NOTICE_BG: Rgb = [253, 246, 227];
+const NOTICE_LINE: Rgb = [181, 137, 0];
 const WHITE: Rgb = [255, 255, 255];
 
-class Writer {
-  readonly doc = new jsPDF({ unit: 'pt', format: 'a4' });
+const SANS = 'helvetica';
+const MONO = 'courier';
+
+// Score list column widths. The name takes what is left of the column.
+const TRACK_W = 56;
+const NUM_W = 20;
+const PILL_COL = 62;
+const GAP_COL = 6;
+
+// Exercise card text, inside the left border.
+const CARD_PAD = 10;
+const CARD_TEXT_INSET = 14;
+const CHIP_W = 46;
+
+class Doc {
+  readonly pdf = new jsPDF({ unit: 'pt', format: 'a4' });
   y = MARGIN;
 
-  // Start a new page when the next block does not fit.
-  room(height: number): void {
+  newPageIfNeeded(height: number): void {
     if (this.y + height > BOTTOM) {
-      this.doc.addPage();
+      this.pdf.addPage();
       this.y = MARGIN;
     }
   }
 
-  font(bold: boolean, size: number, colour: Rgb): void {
-    this.doc.setFont('helvetica', bold ? 'bold' : 'normal');
-    this.doc.setFontSize(size);
-    this.doc.setTextColor(...colour);
+  setFont(family: string, style: 'normal' | 'bold', size: number, colour: Rgb): void {
+    this.pdf.setFont(family, style);
+    this.pdf.setFontSize(size);
+    this.pdf.setTextColor(...colour);
   }
 
-  text(value: string, x: number, y: number, align: 'left' | 'right' | 'center' = 'left'): void {
-    this.doc.text(value, x, y, { align });
+  wrap(text: string, size: number, width: number, style: 'normal' | 'bold' = 'normal'): string[] {
+    this.pdf.setFont(SANS, style);
+    this.pdf.setFontSize(size);
+    return this.pdf.splitTextToSize(text, width) as string[];
   }
 
-  paragraph(value: string, size: number, colour: Rgb = INK, x = MARGIN, width = CONTENT_W): void {
-    this.font(false, size, colour);
-    const lines = this.doc.splitTextToSize(value, width) as string[];
-    const lineHeight = size * 1.45;
-    this.room(lines.length * lineHeight);
-    for (const line of lines) {
-      this.doc.text(line, x, this.y);
-      this.y += lineHeight;
-    }
+  textWidth(text: string, family: string, style: 'normal' | 'bold', size: number): number {
+    this.pdf.setFont(family, style);
+    this.pdf.setFontSize(size);
+    return this.pdf.getTextWidth(text);
   }
 
-  rect(x: number, y: number, w: number, h: number, fill: Rgb, stroke?: Rgb): void {
-    this.doc.setFillColor(...fill);
-    if (stroke) {
-      this.doc.setDrawColor(...stroke);
-      this.doc.setLineWidth(0.6);
-      this.doc.rect(x, y, w, h, 'FD');
-    } else {
-      this.doc.rect(x, y, w, h, 'F');
-    }
+  // Wrapped paragraph; returns the height it used.
+  paragraph(
+    text: string,
+    x: number,
+    top: number,
+    width: number,
+    size: number,
+    colour: Rgb = INK,
+    style: 'normal' | 'bold' = 'normal',
+  ): number {
+    const lines = this.wrap(text, size, width, style);
+    const step = size * 1.45;
+    this.setFont(SANS, style, size, colour);
+    lines.forEach((line, i) => this.pdf.text(line, x, top + size + i * step));
+    return lines.length * step;
   }
 
-  line(x1: number, y1: number, x2: number, y2: number, colour: Rgb, width = 0.6): void {
-    this.doc.setDrawColor(...colour);
-    this.doc.setLineWidth(width);
-    this.doc.line(x1, y1, x2, y2);
+  rect(x: number, y: number, w: number, h: number, fill: Rgb | null, stroke?: Rgb): void {
+    if (fill) this.pdf.setFillColor(...fill);
+    if (stroke) this.pdf.setDrawColor(...stroke);
+    this.pdf.setLineWidth(0.6);
+    this.pdf.rect(x, y, w, h, fill && stroke ? 'FD' : fill ? 'F' : 'S');
   }
 
-  heading(value: string): void {
-    this.room(36);
-    this.font(true, 13, INK);
-    this.text(value, MARGIN, this.y);
-    this.y += 7;
-    this.line(MARGIN, this.y, MARGIN + CONTENT_W, this.y, INK, 1.2);
-    this.y += 14;
+  line(x1: number, x2: number, y: number, colour: Rgb, width = 0.5): void {
+    this.pdf.setDrawColor(...colour);
+    this.pdf.setLineWidth(width);
+    this.pdf.line(x1, y, x2, y);
+  }
+
+  // A pill whose right edge sits at `right`. Returns its width.
+  pill(text: string, right: number, top: number, fg: Rgb, bg: Rgb, border: Rgb): number {
+    const w = this.textWidth(text, SANS, 'bold', 7.5) + 12;
+    this.rect(right - w, top, w, 15, bg, border);
+    this.setFont(SANS, 'bold', 7.5, fg);
+    this.pdf.text(text, right - w / 2, top + 10.5, { align: 'center' });
+    return w;
+  }
+
+  // Section heading: bold text with a 1.6pt rule under it, as in the design.
+  heading(text: string, x = MARGIN, width = W): void {
+    this.setFont(SANS, 'bold', 13, INK);
+    this.pdf.text(text, x, this.y + 10);
+    this.line(x, x + width, this.y + 17, INK, 1.6);
   }
 }
 
-function pillWidth(label: string): number {
-  return label.length * 5 + 14;
+// ---- Scores by goal (left column) ----
+
+function scoreBlock(
+  doc: Doc,
+  x: number,
+  top: number,
+  width: number,
+  summary: Summary,
+  draw: boolean,
+): number {
+  const threshold = summary.gap_threshold;
+  const nameW = width - TRACK_W - NUM_W - PILL_COL - GAP_COL * 3;
+  const trackX = x + nameW + GAP_COL;
+  const numRight = trackX + TRACK_W + GAP_COL + NUM_W;
+  let y = top;
+
+  for (const group of groupScoreRows(summary.scores, threshold)) {
+    if (draw) {
+      doc.setFont(SANS, 'bold', 7, INK_SOFT);
+      doc.pdf.text(group.title.toUpperCase(), x, y + 7);
+    }
+    y += 14;
+
+    for (const row of group.rows) {
+      const state: ScoreStatus = scoreStatus(row.score, threshold);
+      const isGap = state === 'gap';
+      const lines = doc.wrap(`${row.goal} ${row.label}`, 8.5, nameW, isGap ? 'bold' : 'normal');
+      const h = Math.max(lines.length * 11, 16) + 8;
+
+      if (draw) {
+        if (isGap) doc.rect(x - 9, y + 1, 3, h - 2, GAP, undefined);
+        doc.setFont(SANS, isGap ? 'bold' : 'normal', 8.5, isGap ? GAP : INK);
+        lines.forEach((line, i) => doc.pdf.text(line, x, y + 10 + i * 11));
+
+        const barY = y + h / 2 - 4;
+        if (row.score === null) {
+          doc.rect(trackX, barY, TRACK_W, 8, null, HAIRLINE);
+          doc.setFont(SANS, 'normal', 8.5, INK_SOFT);
+          doc.pdf.text('-', numRight, barY + 7, { align: 'right' });
+        } else {
+          doc.rect(trackX, barY, TRACK_W, 8, TRACK);
+          doc.rect(trackX, barY, (TRACK_W * row.score) / 5, 8, isGap ? GAP : ACCENT);
+          // Threshold tick: 2px wide, slightly taller than the bar, at threshold / 5 of the track.
+          const tickX = trackX + (TRACK_W * threshold) / 5;
+          doc.pdf.setDrawColor(...INK);
+          doc.pdf.setLineWidth(1.4);
+          doc.pdf.line(tickX, barY - 3, tickX, barY + 11);
+          doc.setFont(MONO, 'bold', 9, INK);
+          doc.pdf.text(String(row.score), numRight, barY + 7, { align: 'right' });
+        }
+
+        const pillFg = isGap ? GAP : state === 'met' ? ACCENT_DEEP : INK_SOFT;
+        const pillBg = isGap ? GAP_SOFT : WHITE;
+        const pillBorder = isGap ? GAP : state === 'met' ? ACCENT_DEEP : HAIRLINE;
+        doc.pill(STATUS_PILL_TEXT[state], x + width, y + h / 2 - 7.5, pillFg, pillBg, pillBorder);
+        doc.line(x, x + width, y + h, HAIRLINE);
+      }
+      y += h;
+    }
+    y += 6;
+  }
+  return y - top;
 }
+
+// ---- Recommended exercises (right column) ----
+
+function cardBlock(
+  doc: Doc,
+  x: number,
+  top: number,
+  colW: number,
+  card: RecommendationCard,
+  draw: boolean,
+): number {
+  const textX = x + CARD_TEXT_INSET;
+  const textW = colW - CARD_TEXT_INSET - CARD_PAD;
+  const titleLines = doc.wrap(card.title, 9.5, textW - CHIP_W, 'bold');
+  const linkedLines = doc.wrap(`Linked goal: ${card.goal}`, 8, textW);
+  const whyLines = doc.wrap(`Why: ${card.why}`, 8, textW);
+  // One outcome is plain text. Several are bulleted, as on the screen.
+  const outcomeLines =
+    card.outcomes.length === 0
+      ? doc.wrap('No outcome mapped yet (mapping not agreed)', 8, textW)
+      : card.outcomes.length === 1
+        ? doc.wrap(outcomeLine(card.outcomes[0]), 8, textW)
+        : card.outcomes.flatMap((outcome) => doc.wrap(`• ${outcomeLine(outcome)}`, 8, textW));
+
+  const height =
+    CARD_PAD +
+    titleLines.length * 12 +
+    6 +
+    linkedLines.length * 10 +
+    4 +
+    whyLines.length * 10 +
+    6 +
+    9 +
+    2 +
+    outcomeLines.length * 10 +
+    CARD_PAD;
+
+  if (draw) {
+    doc.rect(x, top, colW, height, WHITE, HAIRLINE);
+    doc.rect(x, top, 3, height, GAP);
+
+    let y = top + CARD_PAD;
+    doc.setFont(SANS, 'bold', 9.5, INK);
+    titleLines.forEach((line, i) => doc.pdf.text(line, textX, y + 9 + i * 12));
+    if (card.minutes !== null) {
+      doc.pill(formatMinutes(card.minutes), x + colW - CARD_PAD, y - 2, GAP, GAP_SOFT, GAP);
+    }
+    y += titleLines.length * 12 + 6;
+
+    doc.setFont(SANS, 'normal', 8, INK_SOFT);
+    linkedLines.forEach((line, i) => doc.pdf.text(line, textX, y + 8 + i * 10));
+    y += linkedLines.length * 10 + 4;
+
+    doc.setFont(SANS, 'normal', 8, INK_SOFT);
+    whyLines.forEach((line, i) => doc.pdf.text(line, textX, y + 8 + i * 10));
+    y += whyLines.length * 10 + 6;
+
+    doc.setFont(SANS, 'bold', 6.5, INK_SOFT);
+    doc.pdf.text(card.outcomes.length === 1 ? 'OUTCOME' : 'OUTCOMES', textX, y + 7);
+    y += 9 + 2;
+
+    doc.setFont(SANS, 'normal', 8, INK);
+    outcomeLines.forEach((line, i) => doc.pdf.text(line, textX, y + 8 + i * 10));
+  }
+  return height;
+}
+
+// ---- The page ----
 
 export function buildReportPdf(summary: Summary): Blob {
-  const w = new Writer();
-  const threshold = summary.gap_threshold;
+  const doc = new Doc();
+  const { pdf } = doc;
 
-  // Header
-  w.font(true, 8, MUTED);
-  w.text('SKILL ASSESSMENT REPORT', MARGIN, w.y);
-  w.y += 22;
-  w.font(true, 20, INK);
-  w.text(`Trainee ${summary.trainee_id}`, MARGIN, w.y);
-  const status = STATUS_TEXT[summary.status];
-  const sw = pillWidth(status);
-  w.rect(PAGE_W - MARGIN - sw, w.y - 12, sw, 16, ACCENT_SOFT, ACCENT_DEEP);
-  w.font(true, 8.5, ACCENT_DEEP);
-  w.text(status, PAGE_W - MARGIN - sw / 2, w.y, 'center');
-  w.y += 26;
+  // Header: eyebrow and title on the left; status and saved line on the right.
+  doc.setFont(SANS, 'bold', 7.5, INK_SOFT);
+  pdf.text('SKILL ASSESSMENT REPORT', MARGIN, doc.y + 8);
+  doc.setFont(SANS, 'bold', 22, INK);
+  pdf.text(`Trainee ${summary.trainee_id}`, MARGIN, doc.y + 36);
+  doc.pill(STATUS_TEXT[summary.status], MARGIN + W, doc.y, ACCENT_DEEP, ACCENT_SOFT, ACCENT_DEEP);
+  doc.setFont(SANS, 'normal', 7.5, INK_SOFT);
+  pdf.text(`Report saved · run ${summary.run_id.slice(0, 8)}`, MARGIN + W, doc.y + 32, {
+    align: 'right',
+  });
+  doc.y += 50;
 
-  // Tiles: four boxes in one row.
+  // Four tiles. The skill gaps value is red when there are gaps.
   const tiles: [string, string, boolean][] = [
     ['GOALS ASSESSED', `${summary.assessed_count} of ${summary.goal_count}`, false],
     ['SKILL GAPS', String(summary.gaps.length), summary.gaps.length > 0],
     ['EXERCISES', exerciseTile(summary.gaps), false],
     ['STRONG AREAS', String(summary.strong.length), false],
   ];
-  const gap = 10;
-  const tileW = (CONTENT_W - gap * 3) / 4;
-  w.room(54);
-  tiles.forEach(([label, value, alert], index) => {
-    const x = MARGIN + index * (tileW + gap);
-    w.rect(x, w.y, tileW, 50, ACCENT_SOFT, HAIRLINE);
-    w.font(true, 7, MUTED);
-    w.text(label, x + 8, w.y + 14);
-    w.font(true, 14, alert ? GAP : INK);
-    w.text(value, x + 8, w.y + 37);
+  const tileGap = 10;
+  const tileW = (W - tileGap * 3) / 4;
+  doc.newPageIfNeeded(60);
+  tiles.forEach(([label, value, alert], i) => {
+    const x = MARGIN + i * (tileW + tileGap);
+    doc.rect(x, doc.y, tileW, 46, TILE_BG, HAIRLINE);
+    doc.setFont(SANS, 'bold', 6.5, INK_SOFT);
+    pdf.text(label, x + 9, doc.y + 14);
+    doc.setFont(MONO, 'bold', 12, alert ? GAP : INK);
+    pdf.text(value, x + 9, doc.y + 35);
   });
-  w.y += 68;
+  doc.y += 62;
 
   // Overview: plain text from the agent.
-  w.heading('Overview');
-  w.paragraph(summary.overview, 10.5);
-  w.y += 14;
+  doc.newPageIfNeeded(60);
+  doc.heading('Overview');
+  doc.y += 28;
+  doc.y += doc.paragraph(summary.overview, MARGIN, doc.y, W, 10.5, INK) + 18;
 
-  // Scores by goal, in the three groups.
-  w.heading('Scores by goal');
-  for (const group of groupScoreRows(summary.scores, threshold)) {
-    w.room(30);
-    w.font(true, 7.5, MUTED);
-    w.text(group.title.toUpperCase(), MARGIN, w.y);
-    w.y += 14;
-    for (const row of group.rows) {
-      w.room(24);
-      const state = scoreStatus(row.score, threshold);
-      w.font(false, 9.5, INK);
-      w.text(`${row.goal}  ${row.label}`, MARGIN, w.y);
-      const barX = MARGIN + 260;
-      const barW = 120;
-      if (row.score === null) {
-        w.doc.setDrawColor(...HAIRLINE);
-        w.doc.setLineDashPattern([2, 2], 0);
-        w.doc.rect(barX, w.y - 7, barW, 8, 'S');
-        w.doc.setLineDashPattern([], 0);
-        w.font(false, 9.5, MUTED);
-        w.text('—', MARGIN + CONTENT_W - 100, w.y, 'right');
-      } else {
-        const pct = Number(percentOfScale(row.score).replace('%', '')) / 100;
-        const tickPct = Number(percentOfScale(threshold).replace('%', '')) / 100;
-        w.rect(barX, w.y - 7, barW, 8, TRACK);
-        w.rect(barX, w.y - 7, barW * pct, 8, state === 'gap' ? GAP : ACCENT);
-        w.line(barX + barW * tickPct, w.y - 10, barX + barW * tickPct, w.y + 3, INK, 1.2);
-        w.font(false, 9.5, INK);
-        w.text(String(row.score), MARGIN + CONTENT_W - 100, w.y, 'right');
-      }
-      const label = STATUS_PILL_TEXT[state];
-      const pw = pillWidth(label);
-      const colour = state === 'gap' ? GAP : state === 'met' ? ACCENT_DEEP : MUTED;
-      w.rect(MARGIN + CONTENT_W - pw, w.y - 10, pw, 14, state === 'gap' ? GAP_SOFT : WHITE, colour);
-      w.font(true, 7.5, colour);
-      w.text(label, MARGIN + CONTENT_W - pw / 2, w.y, 'center');
-      w.y += 20;
-    }
-    w.y += 4;
-  }
-  w.y += 10;
-
-  // Recommended exercises: one card per exercise.
-  w.heading('Recommended exercises');
+  // Two columns: scores (1.1 part) and exercises (1 part), as in the design.
+  const gapX = 22;
+  const leftW = ((W - gapX) * 1.1) / 2.1;
+  const rightW = W - gapX - leftW;
+  const rightX = MARGIN + leftW + gapX;
   const cards = recommendationCards(summary.gaps);
+
+  const measureLeft = scoreBlock(doc, MARGIN, 0, leftW, summary, false);
+  const measureRight =
+    cards.length === 0
+      ? 24
+      : cards.reduce(
+          (total, card) => total + cardBlock(doc, rightX, 0, rightW, card, false) + 10,
+          0,
+        );
+  // Keep both columns on one page: start a new page when they would not fit.
+  doc.newPageIfNeeded(28 + Math.max(measureLeft, measureRight));
+
+  const headTop = doc.y;
+  doc.setFont(SANS, 'bold', 13, INK);
+  pdf.text('Scores by goal', MARGIN, headTop + 10);
+  pdf.text('Recommended exercises', rightX, headTop + 10);
+  doc.line(MARGIN, MARGIN + leftW, headTop + 17, INK, 1.6);
+  doc.line(rightX, rightX + rightW, headTop + 17, INK, 1.6);
+  const colTop = headTop + 28;
+
+  scoreBlock(doc, MARGIN, colTop, leftW, summary, true);
+  let rightY = colTop;
   if (cards.length === 0) {
-    w.paragraph('No goal is a skill gap, so no exercise is needed.', 10);
-  }
-  for (const card of cards) {
-    const outcomeLines = card.outcomes.length
-      ? card.outcomes.map((o) => outcomeLine(o))
-      : ['No outcome mapped yet (mapping not agreed)'];
-    const whyLines = w.doc.splitTextToSize(card.why, CONTENT_W - 28) as string[];
-    const height = 42 + whyLines.length * 12 + outcomeLines.length * 12 + 10;
-    w.room(Math.min(height, 200));
-    const top = w.y;
-    w.rect(MARGIN, top - 12, CONTENT_W, height, WHITE, HAIRLINE);
-    w.rect(MARGIN, top - 12, 3, height, GAP);
-    w.font(true, 10.5, INK);
-    w.text(card.title, MARGIN + 14, top);
-    if (card.minutes !== null) {
-      const chip = `${card.minutes} min`;
-      const cw = pillWidth(chip);
-      w.rect(PAGE_W - MARGIN - 10 - cw, top - 10, cw, 14, GAP_SOFT);
-      w.font(true, 8, GAP);
-      w.text(chip, PAGE_W - MARGIN - 10 - cw / 2, top, 'center');
-    }
-    w.y = top + 14;
-    w.font(false, 9, MUTED);
-    w.text(`Linked goal: ${card.goal}`, MARGIN + 14, w.y);
-    w.y += 13;
-    w.font(false, 9.5, INK);
-    whyLines.forEach((line) => {
-      w.text(line, MARGIN + 14, w.y);
-      w.y += 12;
-    });
-    w.font(true, 8.5, MUTED);
-    w.text(card.outcomes.length === 1 ? 'Outcome' : 'Outcomes', MARGIN + 14, w.y);
-    w.font(false, 9.5, INK);
-    outcomeLines.forEach((line, i) => w.text(line, MARGIN + 80, w.y + i * 12));
-    w.y += outcomeLines.length * 12 + 18;
-  }
-  w.y += 6;
-
-  // Strong areas
-  w.heading('Strong areas');
-  if (summary.strong.length === 0) {
-    w.paragraph('No goal scores 4 or above yet.', 10);
-  } else {
-    w.paragraph(
-      summary.strong.map((row) => `${row.goal} ${row.label} · ${row.score}`).join('   ·   '),
-      10,
-      ACCENT_DEEP,
+    doc.paragraph(
+      'No goal is a skill gap, so no exercise is needed.',
+      rightX,
+      rightY,
+      rightW,
+      8.5,
+      INK_SOFT,
     );
+    rightY += 24;
+  } else {
+    for (const card of cards) {
+      rightY += cardBlock(doc, rightX, rightY, rightW, card, true) + 10;
+    }
   }
-  w.y += 10;
+  doc.y = Math.max(rightY, colTop + measureLeft) + 16;
 
-  // Not assessed
-  w.heading('Not assessed');
+  // Strong areas: chips that wrap onto the next line.
+  doc.newPageIfNeeded(60);
+  doc.heading('Strong areas');
+  doc.y += 28;
+  if (summary.strong.length === 0) {
+    doc.y += doc.paragraph('No goal scores 4 or above yet.', MARGIN, doc.y, W, 9, INK_SOFT) + 8;
+  } else {
+    let x = MARGIN;
+    let y = doc.y;
+    for (const row of summary.strong) {
+      const text = `${row.goal} ${row.label} · ${row.score}`;
+      const chipW = doc.textWidth(text, SANS, 'normal', 8.5) + 16;
+      if (x + chipW > MARGIN + W) {
+        x = MARGIN;
+        y += 22;
+      }
+      doc.rect(x, y, chipW, 16, ACCENT_SOFT, ACCENT);
+      doc.setFont(SANS, 'normal', 8.5, ACCENT_DEEP);
+      pdf.text(text, x + 8, y + 11);
+      x += chipW + 8;
+    }
+    doc.y = y + 26;
+  }
+
+  // Not assessed: a note box, as in the design.
+  doc.newPageIfNeeded(70);
+  doc.heading('Not assessed');
+  doc.y += 28;
   if (summary.not_assessed.length === 0) {
-    w.paragraph('Every goal was assessed.', 10);
+    doc.y += doc.paragraph('Every goal was assessed.', MARGIN, doc.y, W, 9, INK_SOFT) + 8;
   } else {
     const note = `${notAssessedNote(summary.not_assessed)} This is not a low score.`;
-    const lines = w.doc.splitTextToSize(note, CONTENT_W - 16) as string[];
-    w.room(lines.length * 14 + 14);
-    w.rect(MARGIN, w.y - 12, CONTENT_W, lines.length * 14 + 10, NOTICE);
-    w.paragraph(note, 10, INK, MARGIN + 8, CONTENT_W - 16);
-    w.y += 6;
+    const noteLines = doc.wrap(note, 9, W - 24);
+    const boxH = noteLines.length * 13 + 16;
+    doc.newPageIfNeeded(boxH + 10);
+    doc.rect(MARGIN, doc.y, W, boxH, NOTICE_BG);
+    doc.rect(MARGIN, doc.y, 4, boxH, NOTICE_LINE);
+    doc.paragraph(note, MARGIN + 14, doc.y + 8, W - 24, 9, INK);
+    doc.y += boxH + 14;
   }
-  w.y += 14;
 
-  w.paragraph(
-    "Generated from the trainee's assessment results. Draft, not reviewed: a reviewer must approve it before it is shared.",
-    8,
-    MUTED,
-  );
+  // Footer.
+  const footer =
+    "Generated from the trainee's assessment results. Draft, not reviewed: a reviewer must approve it before it is shared.";
+  doc.newPageIfNeeded(30);
+  doc.line(MARGIN, MARGIN + W, doc.y, HAIRLINE);
+  doc.paragraph(footer, MARGIN, doc.y + 6, W, 7, INK_SOFT);
 
-  return w.doc.output('blob');
+  return pdf.output('blob');
 }

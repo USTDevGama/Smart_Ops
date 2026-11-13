@@ -7,8 +7,10 @@ import type { Summary } from './api';
 import { buildReportPdf } from './reportPdf';
 import {
   exerciseTile,
+  formatMinutes,
   groupScoreRows,
   notAssessedNote,
+  outcomeLine,
   percentOfScale,
   recommendationCards,
   reportFileName,
@@ -253,7 +255,7 @@ describe('tiles and counts from the API', () => {
   it('shows the SYN-01 counts', () => {
     expect(`${T01.assessed_count} of ${T01.goal_count}`).toBe('10 of 12');
     expect(T01.gaps.length).toBe(2);
-    expect(exerciseTile(T01.gaps)).toBe('2 · 100 min');
+    expect(exerciseTile(T01.gaps)).toBe('2 · 1 h 40 min');
     expect(T01.strong.length).toBe(5);
     expect(T01.not_assessed.length).toBe(2);
   });
@@ -264,7 +266,7 @@ describe('plain-text fields', () => {
     expect(T01.overview.startsWith('10 of 12 goals were assessed')).toBe(true);
     const cards = recommendationCards(T01.gaps);
     expect(cards[0].why).toBe(T01.gaps[0].why);
-    expect(cards[0].title).toBe('EX-03 Find the injection: secure code lab');
+    expect(cards[0].title).toBe('Find the injection: secure code lab');
   });
 
   it('keeps a gap with no approved exercise visible', () => {
@@ -334,5 +336,21 @@ describe('PDF download', () => {
       not_assessed: T02.scores.map((row) => ({ goal: row.goal, label: row.label })),
     });
     expect(blob.size).toBeGreaterThan(1000);
+  });
+});
+
+describe('minutes and card text', () => {
+  it('shows minutes as hours when they reach an hour', () => {
+    expect(formatMinutes(40)).toBe('40 min');
+    expect(formatMinutes(60)).toBe('1 h');
+    expect(formatMinutes(100)).toBe('1 h 40 min');
+  });
+
+  it('shows the goal with its score and the outcome without its code', () => {
+    const cards = recommendationCards(T01.gaps);
+    expect(cards[0].goal).toBe('G03 Secure code (score 2)');
+    expect(outcomeLine(T01.gaps[0].outcomes[0])).toBe(
+      'Security, compliance and intellectual-property protection.',
+    );
   });
 });

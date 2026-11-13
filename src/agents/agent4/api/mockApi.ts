@@ -168,12 +168,6 @@ export function createMockApi(): Agent4Api {
       return { run_id: runId, status: 'pending_review' };
     },
 
-    async downloadPdf(summary) {
-      await sleep();
-      const { buildReportPdf } = await import('../reportPdf');
-      return buildReportPdf(summary);
-    },
-
     async submitReview(runId, body) {
       await sleep();
       const entry = [...store.entries()].find(([, r]) => r.summary?.run_id === runId);

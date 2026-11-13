@@ -3,11 +3,11 @@
 
 import { useState } from 'react';
 
-import { useAgent4Api, type RunStatus, type ScoreRow, type Summary } from './api';
+import type { RunStatus, ScoreRow, Summary } from './api';
 import {
   exerciseTile,
+  formatMinutes,
   groupScoreRows,
-  matchLabel,
   notAssessedNote,
   outcomeLine,
   percentOfScale,
@@ -68,7 +68,9 @@ function RecommendationCard({ card }: { card: Card }) {
     <article className={styles.exCard}>
       <header className={styles.exHead}>
         <h3 className={styles.exTitle}>{card.title}</h3>
-        {card.minutes !== null && <span className={styles.chip}>{card.minutes} min</span>}
+        {card.minutes !== null && (
+          <span className={styles.chip}>{formatMinutes(card.minutes)}</span>
+        )}
       </header>
       <p className={styles.meta}>
         <strong>Linked goal:</strong> {card.goal}
@@ -81,13 +83,12 @@ function RecommendationCard({ card }: { card: Card }) {
       </p>
       {card.outcomes.length === 0 ? (
         <p className={styles.meta}>No outcome mapped yet (mapping not agreed).</p>
+      ) : card.outcomes.length === 1 ? (
+        <p className={styles.outcomeText}>{outcomeLine(card.outcomes[0])}</p>
       ) : (
         <ul className={styles.outcomes}>
           {card.outcomes.map((outcome) => (
-            <li key={outcome.id}>
-              {outcomeLine(outcome)}{' '}
-              <span className={styles.matchTag}>{matchLabel(outcome.match)}</span>
-            </li>
+            <li key={outcome.id}>{outcomeLine(outcome)}</li>
           ))}
         </ul>
       )}
@@ -109,7 +110,6 @@ function saveBlob(blob: Blob, fileName: string): void {
 
 /** The whole results page. Every value comes from the summary. */
 export function ResultsBlock({ summary }: { summary: Summary }) {
-  const api = useAgent4Api();
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
   const threshold = summary.gap_threshold;
@@ -120,7 +120,8 @@ export function ResultsBlock({ summary }: { summary: Summary }) {
     setBusy(true);
     setMessage('');
     try {
-      saveBlob(await api.downloadPdf(summary), reportFileName(summary.trainee_id));
+      const { buildReportPdf } = await import('./reportPdf');
+      saveBlob(buildReportPdf(summary), reportFileName(summary.trainee_id));
       setMessage('Report downloaded.');
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'The report could not be downloaded.');

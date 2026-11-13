@@ -72,31 +72,3 @@ describe('summary', () => {
     await expect(api.getSummary('SYN-02')).rejects.toBeInstanceOf(ApiError);
   });
 });
-
-describe('PDF download', () => {
-  it('posts the summary exactly as received and returns the PDF', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(
-      new Response(new Uint8Array([37, 80, 68, 70]), {
-        status: 200,
-        headers: { 'content-type': 'application/pdf' },
-      }),
-    );
-    vi.stubGlobal('fetch', fetchMock);
-
-    const blob = await api.downloadPdf(SUMMARY);
-
-    const [url, init] = fetchMock.mock.calls[0];
-    expect(url).toBe('/agent4-api/v1/reports/pdf');
-    expect(init.method).toBe('POST');
-    expect(JSON.parse(init.body as string)).toEqual(SUMMARY);
-    expect(blob.size).toBe(4);
-  });
-
-  it('shows the retry text when the PDF engine is not available (503)', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('', { status: 503 })));
-    await expect(api.downloadPdf(SUMMARY)).rejects.toMatchObject({
-      status: 503,
-      message: 'The PDF service is not available right now. Try again in a moment.',
-    });
-  });
-});

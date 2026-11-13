@@ -123,20 +123,28 @@ export function recommendationCards(gaps: GapSummary[]): RecommendationCard[] {
     }
     return gap.exercises.map((exercise) => ({
       key: `${gap.goal}-${exercise.id}`,
-      title: `${exercise.id} ${exercise.title}`,
+      title: exercise.title,
       minutes: exercise.minutes,
-      goal,
+      goal: `${goal} (score ${gap.score})`,
       why: gap.why,
       outcomes: gap.outcomes,
     }));
   });
 }
 
-// Tile value for exercises: "2 · 85 min". Only approved exercises count.
+// Minutes as the screen shows them: "40 min", "1 h", "1 h 40 min".
+export function formatMinutes(total: number): string {
+  if (total < 60) return `${total} min`;
+  const hours = Math.floor(total / 60);
+  const minutes = total % 60;
+  return minutes === 0 ? `${hours} h` : `${hours} h ${minutes} min`;
+}
+
+// Tile value for exercises: "2 · 1 h 40 min". Only approved exercises count.
 export function exerciseTile(gaps: GapSummary[]): string {
   const exercises = gaps.flatMap((gap) => gap.exercises);
   const minutes = exercises.reduce((total, exercise) => total + exercise.minutes, 0);
-  return `${exercises.length} · ${minutes} min`;
+  return `${exercises.length} · ${formatMinutes(minutes)}`;
 }
 
 export function exerciseCount(gaps: GapSummary[]): number {
@@ -147,8 +155,9 @@ export function matchLabel(match: string): string {
   return `${match.charAt(0).toUpperCase()}${match.slice(1)} match`;
 }
 
+// The outcome as a person reads it: its wording only, without the internal code (O4, O11...).
 export function outcomeLine(outcome: Outcome): string {
-  return `${outcome.id} ${outcome.wording}`;
+  return outcome.wording;
 }
 
 // What the screen says for each error from the summary. The server's own text is for developers.
