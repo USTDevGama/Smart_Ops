@@ -97,6 +97,17 @@
   border-radius: var(--radius-md);
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
   z-index: 20;
+  animation: dropdown-in 150ms ease-out;
+}
+@keyframes dropdown-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 .menuItem {
   display: block;
