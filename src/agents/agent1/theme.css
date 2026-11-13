@@ -95,8 +95,7 @@
 }
 
 .viva .tracks-page {
-  max-width: 920px;
-  margin: 0 auto;
+  width: 100%;
 }
 
 .viva .hero-card {
@@ -219,7 +218,7 @@
   margin-bottom: 16px;
 }
 .viva .card.narrow {
-  max-width: 680px;
+  max-width: 860px;
   margin-inline: auto;
 }
 
@@ -617,9 +616,49 @@
   font-weight: 600;
 }
 
+/* Session review page — two-column layout with per-section scrolling */
+.viva .session-review-page {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.viva .review-back {
+  display: flex;
+  align-items: center;
+}
+.viva .review-panels {
+  display: grid;
+  grid-template-columns: minmax(260px, 32%) 1fr;
+  gap: 16px;
+  align-items: start;
+}
+.viva .curriculum-scroll {
+  position: sticky;
+  top: 16px;
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+}
+.viva .detail-col {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.viva .scroll-panel {
+  max-height: 380px;
+  overflow-y: auto;
+}
+
 @media (max-width: 1050px) {
   .viva .session-panels {
     grid-template-columns: 1fr;
+  }
+  .viva .review-panels {
+    grid-template-columns: 1fr;
+  }
+  .viva .curriculum-scroll {
+    position: static;
+    max-height: none;
+    overflow-y: visible;
   }
 }
 @media (max-width: 820px) {
