@@ -31,7 +31,7 @@ host/            the seam to the portal (useHostAuth.ts adapts @/auth; bridge.ts
 api/             types.ts (contract), client.ts, httpClient.ts, mock/ (mock only)
 pages/           Admin.tsx, User.tsx
 components/      this agent's pieces (Button, Alert, Modal ... are local, Tailwind-styled from the design tokens);
-                 FindingCard and GoalScores show the output, ResultViewer puts them above the raw JSON
+                 FindingCard shows one finding, ResultViewer puts the cards above the raw JSON
 styles/          tailwind.css, bf.css (resets scoped to .bf)
 ```
 

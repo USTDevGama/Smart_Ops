@@ -45,19 +45,28 @@ test('trainee sees only the run page and can run and review', async ({ page }) =
     await expect(output).toBeVisible({ timeout: 1_000 });
   }).toPass({ timeout: 45_000 });
 
-  // the output is human readable: flag cards (sources, review, trainee), goal scores, and the raw JSON last
+  // the output is human readable: one card per flag (description, trainee, source, explanation), then the raw JSON last
   const details = page.getByRole('region', { name: 'Output details' });
   await expect(details.getByRole('heading', { name: /^Detected flags \(\d+\)$/ })).toBeVisible();
-  const card = details.locator('li', { has: page.getByText('Sources', { exact: true }) }).first();
+  const card = details
+    .locator('li', { has: page.getByText('Explanation', { exact: true }) })
+    .first();
   await expect(card.getByText('Confidence', { exact: true })).toBeVisible();
+  await expect(card.getByText('Description', { exact: true })).toBeVisible();
   await expect(card.getByText('Trainee', { exact: true })).toBeVisible();
-  await expect(card.getByText('Review', { exact: true })).toBeVisible();
-  await expect(details.getByRole('heading', { name: 'Trainee goal scores' })).toBeVisible();
+  await expect(card.getByText('Source', { exact: true })).toBeVisible();
+  await expect(card.getByText('Explanation', { exact: true })).toBeVisible();
+  await expect(card.getByText('Not available')).toHaveCount(0); // the description was found in the flags list
+  await expect(details.getByRole('heading', { name: 'Trainee goal scores' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Escalate' })).toHaveCount(0);
   await expect(details.getByRole('heading', { name: 'Raw JSON' })).toBeVisible();
 
   // History lists the runs
   await page.getByRole('tab', { name: 'History' }).click();
   await expect(page.getByRole('heading', { name: 'Flag management' })).toHaveCount(0);
+  // each run is titled by its batch id, not by the uploaded file name
+  await expect(page.getByText(/^Batch B-\d{4}$/).first()).toBeVisible();
+  await expect(page.getByText('sample-input.json')).toHaveCount(0);
 });
 
 test('admin sees only flag management: add, deactivate, delete', async ({ page }) => {

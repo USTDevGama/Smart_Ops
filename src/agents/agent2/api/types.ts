@@ -53,7 +53,7 @@ export type Role = 'user' | 'admin';
  */
 export type RunStatus = 'queued' | 'running' | 'needs_review' | 'completed' | 'failed';
 
-export type Decision = 'accept' | 'reject' | 'escalate';
+export type Decision = 'accept' | 'reject';
 
 export type FlagCheckState = 'pending' | 'checking' | 'checked';
 
@@ -87,79 +87,56 @@ export interface StartRunResponse {
 /**
  * A finding the agent is NOT confident about. The BACKEND decides which findings need review
  * (confidence threshold lives in backend config). The UI only renders what is listed here.
+ * Field names follow the agent's output (`detected_flags`), plus `item_id` and `decision` for the review step.
  */
 export interface ReviewItem {
   item_id: string;
-  flag_id: string;
-  flag_name: string;
+  /** Flag name from the agent output, e.g. "subtle_harsh". */
+  flag: string;
   confidence: number;
-  /** The text/value from the input that triggered the flag. */
-  evidence: string;
-  /** Where in the input JSON (e.g. a JSON path like "$.records[3].comment"). */
-  location: string;
-  /** Agent's reasoning, shown to the reviewer. */
+  /** "<reviewer> <-> <trainee>", e.g. "R-02 <-> T-03". The left side is the source, the right side the trainee. */
+  subject: string;
+  /** Ids of the input records the finding is based on, e.g. "FB-019". */
+  evidence_ids: string[];
+  /** The agent's own reasoning (long text, 250-300 words in the real output). Never the flag's description. */
   explanation: string;
   /** null = not yet reviewed. */
   decision: Decision | null;
 }
 
 /**
- * pending_review: raised but not yet decided by a person (the status the agent writes first).
- * The rest are final: the agent was confident enough (auto_accepted) or a person decided.
+ * PENDING_REVIEW: raised but not yet decided by a person (the status the agent writes first).
+ * The rest are final: the agent was confident enough (AUTO_ACCEPTED) or a person decided.
  */
-export type FindingStatus =
-  'pending_review' | 'auto_accepted' | 'accepted' | 'rejected' | 'escalated';
+export type FindingStatus = 'PENDING_REVIEW' | 'AUTO_ACCEPTED' | 'ACCEPTED' | 'REJECTED';
 
+/** One entry of `detected_flags` in the agent's final output. */
 export interface Finding {
-  finding_id: string;
-  flag_id: string;
-  flag_name: string;
+  flag: string;
   confidence: number;
-  /** Ids of the input records this finding is based on (e.g. "FB-019"). Shown as the "sources" of the flag. */
-  evidence_ids: string[];
-  /** Optional quote from the input. The backend may omit it and send only evidence_ids. */
-  evidence?: string;
-  /** Optional JSON path in the input (e.g. "$.records[3].comment"). */
-  location?: string;
-  explanation: string;
-  /** Optional: the trainee the feedback is about, when the backend knows it. */
-  trainee_id?: string;
   status: FindingStatus;
-  reviewed_by_human: boolean;
+  /** "<reviewer> <-> <trainee>", e.g. "R-02 <-> T-03". */
+  subject: string;
+  evidence_ids: string[];
+  explanation: string;
 }
 
-/** One theme score: a number, or the text below when there was not enough feedback to score. */
-export type ThemeScore = number | 'INSUFFICIENT_EVIDENCE';
-
-/** Goal scoring for one trainee. Keys of B_themes are goal codes such as "G05". */
-export interface TraineeGoalScore {
-  trainee_id: string;
-  B_themes: Record<string, ThemeScore>;
-}
-
-/** Final output JSON shown to the user (flag cards, goal scores, and the raw JSON with a copy button). */
+/**
+ * Final output JSON shown to the user (one card per detected flag, then the raw JSON with a copy button).
+ * The agent also returns `goal_scoring`; the UI does not show it and ignores it.
+ */
 export interface RunResult {
-  run_id: string;
-  generated_at: string;
-  input_filename: string;
-  summary: {
-    flags_checked: number;
-    findings_total: number;
-    auto_accepted: number;
-    human_reviewed: number;
-    accepted: number;
-    rejected: number;
-    escalated: number;
-  };
-  findings: Finding[];
-  /** Optional: the backend may store goal scoring in its own table and not send it here. */
-  goal_scoring?: TraineeGoalScore[];
+  /** Identifies the batch of feedback that was checked. Shown in History and above the output. */
+  batch_id?: string;
+  detected_flags: Finding[];
 }
 
 export interface Run {
   run_id: string;
   session_id: string;
   filename: string;
+  /** From the output. null until the backend knows it. */
+  batch_id: string | null;
   status: RunStatus;
   created_at: string;
   updated_at: string;
@@ -175,7 +152,8 @@ export interface Run {
 /** Compact row for the History tab. */
 export interface RunSummary {
   run_id: string;
-  filename: string;
+  /** Shown as the title of the history card. null until the backend knows it. */
+  batch_id: string | null;
   status: RunStatus;
   created_at: string;
   flags_checked: number;

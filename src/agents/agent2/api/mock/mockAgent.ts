@@ -1,13 +1,4 @@
-import type {
-  Decision,
-  Finding,
-  Flag,
-  ReviewItem,
-  Run,
-  RunResult,
-  FlagProgress,
-  TraineeGoalScore,
-} from '../types';
+import type { Decision, Finding, Flag, ReviewItem, Run, RunResult, FlagProgress } from '../types';
 
 /**
  * MOCK ONLY. Stand-in for the real agent + backend worker. None of this logic belongs in the frontend
@@ -74,15 +65,42 @@ export interface PlannedFinding {
   flag_name: string;
   raised: boolean;
   confidence: number;
-  evidence: string;
-  location: string;
-  /** Ids of up to 3 input records the finding is based on. The first one is the quoted evidence. */
+  /** "<reviewer> <-> <trainee>", as in the agent output. */
+  subject: string;
+  /** Ids of up to 3 input records the finding is based on. */
   evidence_ids: string[];
-  trainee_id: string;
   explanation: string;
 }
 
 const MOCK_TRAINEES = ['T-03', 'T-07'];
+const MOCK_REVIEWERS = ['R-02', 'R-05'];
+
+/** The batch id the mock puts on a run: the input's own `batch_id` when it has one, else a stable made-up one. */
+export function batchIdFor(runId: string, payload: unknown): string {
+  const own = (payload as { batch_id?: unknown } | null)?.batch_id;
+  if (typeof own === 'string' && own.trim()) return own.trim();
+  return `B-${String(hash(runId) % 10000).padStart(4, '0')}`;
+}
+
+/**
+ * A made-up reason in the agent's voice about THIS piece of feedback. It is not the flag's description:
+ * the real agent writes its own explanation per finding and the backend sends it as `explanation`.
+ */
+const EXPLANATION_TEMPLATES: ((flag: string, quote: string) => string)[] = [
+  (flag, quote) =>
+    `The agent read "${quote}" as ${flag}: the wording is aimed at the person rather than at the work they did.`,
+  (flag, quote) =>
+    `This comment ("${quote}") reads as ${flag}. The same tone does not show up in the rest of the feedback, so it may be bias rather than a fair assessment.`,
+  (flag, quote) =>
+    `The phrase "${quote}" was judged to be ${flag} because it makes a general claim without pointing to any specific example.`,
+];
+
+function mockExplanation(flagName: string, quote: string, rng: () => number): string {
+  const label = flagName.replace(/[_-]+/g, ' ').trim().toLowerCase();
+  const short = quote.length > 60 ? `${quote.slice(0, 57)}…` : quote;
+  const pick = EXPLANATION_TEMPLATES[Math.floor(rng() * EXPLANATION_TEMPLATES.length)];
+  return pick(label, short);
+}
 
 /** Decide up-front (deterministically) what the "agent" will find for each flag. */
 export function planRun(
@@ -111,11 +129,9 @@ export function planRun(
       flag_name: f.name,
       raised,
       confidence,
-      evidence: snippet,
-      location: hit.path,
+      subject: `${MOCK_REVIEWERS[Math.floor(rng() * MOCK_REVIEWERS.length)]} <-> ${MOCK_TRAINEES[Math.floor(rng() * MOCK_TRAINEES.length)]}`,
       evidence_ids,
-      trainee_id: MOCK_TRAINEES[Math.floor(rng() * MOCK_TRAINEES.length)],
-      explanation: `The wording here may indicate "${f.name}". ${f.description}`,
+      explanation: mockExplanation(f.name, snippet, rng),
     };
   });
 
@@ -139,6 +155,7 @@ export interface RunRecord {
   run_id: string;
   session_id: string;
   filename: string;
+  batch_id: string;
   created_at: string;
   started_ms: number;
   plan: PlannedFinding[];
@@ -171,6 +188,7 @@ export function materialize(rec: RunRecord, nowMs: number): Run {
     run_id: rec.run_id,
     session_id: rec.session_id,
     filename: rec.filename,
+    batch_id: rec.batch_id,
     created_at: rec.created_at,
     updated_at: new Date(Math.min(nowMs, finishedMs(rec))).toISOString(),
     error: null,
@@ -197,11 +215,10 @@ export function materialize(rec: RunRecord, nowMs: number): Run {
     .filter((p) => p.confidence < MOCK_REVIEW_THRESHOLD)
     .map((p) => ({
       item_id: itemIdFor(rec.run_id, p.flag_id),
-      flag_id: p.flag_id,
-      flag_name: p.flag_name,
+      flag: agentFlagName(p.flag_name),
       confidence: p.confidence,
-      evidence: p.evidence,
-      location: p.location,
+      subject: p.subject,
+      evidence_ids: p.evidence_ids,
       explanation: p.explanation,
       decision: rec.decisions[itemIdFor(rec.run_id, p.flag_id)] ?? null,
     }));
@@ -219,66 +236,28 @@ export function materialize(rec: RunRecord, nowMs: number): Run {
   };
 }
 
+/** The agent writes flag names with underscores ("subtle_harsh"); the flags table may use hyphens. */
+const agentFlagName = (name: string) => name.trim().replace(/[\s-]+/g, '_');
+
 function buildResult(rec: RunRecord, reviewItems: ReviewItem[]): RunResult {
-  const byFlag = new Map(reviewItems.map((i) => [i.flag_id, i]));
-  const findings: Finding[] = rec.plan
+  const byItem = new Map(reviewItems.map((i) => [i.item_id, i]));
+  const detected_flags: Finding[] = rec.plan
     .filter((p) => p.raised)
-    .map((p, idx) => {
-      const review = byFlag.get(p.flag_id);
+    .map((p) => {
+      const review = byItem.get(itemIdFor(rec.run_id, p.flag_id));
       const status: Finding['status'] = !review
-        ? 'auto_accepted'
+        ? 'AUTO_ACCEPTED'
         : review.decision === 'accept'
-          ? 'accepted'
-          : review.decision === 'reject'
-            ? 'rejected'
-            : 'escalated';
+          ? 'ACCEPTED'
+          : 'REJECTED';
       return {
-        finding_id: `${rec.run_id}:f${idx + 1}`,
-        flag_id: p.flag_id,
-        flag_name: p.flag_name,
+        flag: agentFlagName(p.flag_name),
         confidence: p.confidence,
-        evidence: p.evidence,
-        location: p.location,
-        evidence_ids: p.evidence_ids,
-        trainee_id: p.trainee_id,
-        explanation: p.explanation,
         status,
-        reviewed_by_human: !!review,
+        subject: p.subject,
+        evidence_ids: p.evidence_ids,
+        explanation: p.explanation,
       };
     });
-  const count = (s: Finding['status']) => findings.filter((f) => f.status === s).length;
-  return {
-    run_id: rec.run_id,
-    generated_at: new Date(finishedMs(rec)).toISOString(), // stable across repeated GETs
-    input_filename: rec.filename,
-    summary: {
-      flags_checked: rec.plan.length,
-      findings_total: findings.length,
-      auto_accepted: count('auto_accepted'),
-      human_reviewed: findings.filter((f) => f.reviewed_by_human).length,
-      accepted: count('accepted'),
-      rejected: count('rejected'),
-      escalated: count('escalated'),
-    },
-    findings,
-    goal_scoring: mockGoalScoring(rec.run_id),
-  };
-}
-
-/** Stable fake goal scores for two trainees. G12 is always "not enough evidence", as in the agreed sample output. */
-function mockGoalScoring(runId: string): TraineeGoalScore[] {
-  return MOCK_TRAINEES.map((trainee_id) => {
-    const rng = mulberry32(hash(`${runId}:${trainee_id}`));
-    const score = () => 2 + Math.floor(rng() * 3);
-    return {
-      trainee_id,
-      B_themes: {
-        G05: score(),
-        G06: score(),
-        G07: score(),
-        G11: score(),
-        G12: 'INSUFFICIENT_EVIDENCE' as const,
-      },
-    };
-  });
+  return { batch_id: rec.batch_id, detected_flags };
 }

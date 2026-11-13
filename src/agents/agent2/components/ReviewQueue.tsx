@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import type { Decision, ReviewItem } from '../api/types';
-import { pct } from '../util/format';
+import { flagKey, flagTitle, pct } from '../util/format';
+import FlagFacts, { type FlagDescriptions } from './FlagFacts';
 import { useToast } from './Toast';
 
 /**
  * Decisions are text buttons with a pressed state, so the choice never relies on colour alone: accept = primary,
- * reject = error, escalate = heading colour. The confidence bar is one accent fill; the number carries the meaning.
+ * reject = error. The confidence bar is one accent fill; the number carries the meaning.
  * Which items need review is decided by the BACKEND, not here.
  */
 const options: { value: Decision; label: string; active: string; idle: string }[] = [
@@ -21,19 +22,15 @@ const options: { value: Decision; label: string; active: string; idle: string }[
     active: 'border-error bg-error text-white',
     idle: 'border-error-mid text-error hover:bg-error-faint',
   },
-  {
-    value: 'escalate',
-    label: 'Escalate',
-    active: 'border-heading bg-heading text-white',
-    idle: 'border-line text-heading hover:border-highlight-border hover:bg-highlight',
-  },
 ];
 
 function ReviewCard({
   item,
+  descriptions,
   onDecide,
 }: {
   item: ReviewItem;
+  descriptions: FlagDescriptions;
   onDecide: (id: string, d: Decision) => Promise<void>;
 }) {
   const [saving, setSaving] = useState<Decision | null>(null);
@@ -55,7 +52,7 @@ function ReviewCard({
       className={`rounded-md border bg-surface p-4 ${item.decision ? 'border-line' : 'border-accent'}`}
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <h4>{item.flag_name}</h4>
+        <h4>{flagTitle(item.flag)}</h4>
         <div className="flex items-center gap-2" title="Agent confidence">
           <span className="text-xs text-body">Confidence</span>
           <div
@@ -74,18 +71,17 @@ function ReviewCard({
         </div>
       </div>
 
-      <p className="mt-3 font-mono text-xs text-body">{item.location}</p>
-      {item.evidence && (
-        <blockquote className="mt-2 rounded-sm border border-highlight-border bg-highlight px-3 py-2 text-sm italic text-heading">
-          “{item.evidence}”
-        </blockquote>
-      )}
-      <p className="mt-3 text-sm text-body">{item.explanation}</p>
+      <FlagFacts
+        flag={item.flag}
+        subject={item.subject}
+        explanation={item.explanation}
+        description={descriptions[flagKey(item.flag)]}
+      />
 
       <div
         className="mt-4 flex flex-wrap gap-2"
         role="group"
-        aria-label={`Decision for ${item.flag_name}`}
+        aria-label={`Decision for ${item.flag}`}
       >
         {options.map((o) => (
           <button
@@ -108,9 +104,11 @@ function ReviewCard({
 
 export default function ReviewQueue({
   items,
+  descriptions,
   onDecide,
 }: {
   items: ReviewItem[];
+  descriptions: FlagDescriptions;
   onDecide: (id: string, d: Decision) => Promise<void>;
 }) {
   const done = items.filter((i) => i.decision).length;
@@ -123,12 +121,12 @@ export default function ReviewQueue({
         </span>
       </div>
       <p className="mt-1 text-sm text-body">
-        The agent was not confident about these flags. Accept, reject or escalate each one. The full
-        output appears once all are reviewed.
+        The agent was not confident about these flags. Accept or reject each one. The full output
+        appears once all are reviewed.
       </p>
       <ul className="mt-4 space-y-3">
         {items.map((i) => (
-          <ReviewCard key={i.item_id} item={i} onDecide={onDecide} />
+          <ReviewCard key={i.item_id} item={i} descriptions={descriptions} onDecide={onDecide} />
         ))}
       </ul>
     </div>

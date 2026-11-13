@@ -4,6 +4,7 @@ For the Pod 2 team members who connect the `Smart_Ops_Pod2` backend to the commo
 
 - Live dashboard: <http://10.100.242.180:8086/>
 - UI code: `src/agents/agent2/` (this repo). Backend: `Smart_Ops_Pod2/backend` (separate repo).
+- Backend engineer: the API the UI needs is in [agent2-api-for-backend.md](agent2-api-for-backend.md).
 - Same pattern as Agent 3 and Agent 4: the browser calls a same-origin path, nginx forwards it to the backend. See [deployment.md](deployment.md).
 
 ## How a request travels
@@ -90,21 +91,41 @@ Also note: the backend refuses admins on analyses (403 `USER_ROLE_REQUIRED`). Th
 
 ## What the UI expects back for a finished run
 
-The output screen now shows one card per detected flag, then goal scores, then the raw JSON. The response of `GET /runs/{id}` and `GET /runs/{id}/result` (`result` object) should follow `src/agents/agent2/api/types.ts`. For each entry in `findings`:
+The output screen shows one card per detected flag, then the raw JSON. The field names are the agent's own. `result` (in `GET /runs/{id}` and `GET /runs/{id}/result`) is:
 
-| Field                  | Required | Meaning                                                                                |
-| ---------------------- | -------- | -------------------------------------------------------------------------------------- |
-| `finding_id`           | yes      | Unique id                                                                              |
-| `flag_id`, `flag_name` | yes      | The flag; names like `subtle_harsh` are shown as "Subtle harsh"                        |
-| `confidence`           | yes      | Number from 0 to 1                                                                     |
-| `evidence_ids`         | yes      | Ids of the input records behind the finding (for example `FB-019`); shown as "Sources" |
-| `explanation`          | yes      | Plain-language reason                                                                  |
-| `status`               | yes      | `pending_review`, `auto_accepted`, `accepted`, `rejected` or `escalated`               |
-| `reviewed_by_human`    | yes      | Whether a person decided                                                               |
-| `trainee_id`           | no       | The card shows a Trainee row only when this is present                                 |
-| `evidence`, `location` | no       | A quote and its JSON path, shown under the card when present                           |
+```json
+{
+  "batch_id": "B-1042",
+  "detected_flags": [
+    {
+      "flag": "clique",
+      "confidence": 0.9,
+      "status": "PENDING_REVIEW",
+      "subject": "R-02 <-> T-03",
+      "evidence_ids": ["FB-019", "FB-020"],
+      "explanation": "..."
+    }
+  ]
+}
+```
 
-`result.goal_scoring` is optional: a list of `{ "trainee_id": "T-03", "B_themes": { "G05": 4, "G12": "INSUFFICIENT_EVIDENCE" } }`. If the backend stores it in its own table and does not return it, the "Trainee goal scores" section simply does not appear. Decide with the UI team whether it should be returned.
+| Field          | Required | Shown as                                                                                                     |
+| -------------- | -------- | ------------------------------------------------------------------------------------------------------------ |
+| `batch_id`     | no       | The title of each run in History and above the output. Without it the UI says "Batch ID not available yet"   |
+| `flag`         | yes      | Card title (`subtle_harsh` becomes "Subtle harsh"). Also the key for the **Description**, see below          |
+| `confidence`   | yes      | Confidence bar, a number from 0 to 1                                                                         |
+| `status`       | yes      | `PENDING_REVIEW`, `AUTO_ACCEPTED`, `ACCEPTED` or `REJECTED` (upper case)                                     |
+| `subject`      | yes      | `"<reviewer> <-> <trainee>"`. Left side is the **Source**, right side is the **Trainee**                     |
+| `evidence_ids` | yes      | Not shown on the card (only in the raw JSON)                                                                 |
+| `explanation`  | yes      | **Explanation**: the agent's own reasoning for this finding, never the flag's description. Long text is fine |
+
+**Description** is not in the agent output. The UI reads it from the flags table (`GET /flags`) by matching `flag` to the flag name, ignoring case and `_` versus `-`. A flag that is no longer in the table shows "Not available".
+
+`batch_id` is the one field the UI needs that is not in the agreed sample output. Also put it on the run (`GET /runs/{id}` and each row of `GET /runs`) so History can show it for runs that have not finished. `goal_scoring` in a response is ignored.
+
+A review item in `run.review_items` uses the same names (`flag`, `confidence`, `subject`, `evidence_ids`, `explanation`) plus `item_id` and `decision`.
+
+Human review has two decisions only: `accept` and `reject`. The UI has no Escalate button and no `escalated` status.
 
 The matching update to `Smart_Ops_Pod2/contracts/ui_api.openapi.yaml` is **not done yet**.
 

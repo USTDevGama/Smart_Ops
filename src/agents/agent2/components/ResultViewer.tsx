@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { RunResult } from '../api/types';
 import Button from './Button';
 import FindingCard from './FindingCard';
-import GoalScores from './GoalScores';
+import type { FlagDescriptions } from './FlagFacts';
 
 async function copyText(text: string): Promise<boolean> {
   try {
@@ -31,10 +31,17 @@ function Stat({ label, value, tone }: { label: string; value: number; tone: stri
   );
 }
 
-export default function ResultViewer({ result }: { result: RunResult }) {
+export default function ResultViewer({
+  result,
+  descriptions,
+}: {
+  result: RunResult;
+  descriptions: FlagDescriptions;
+}) {
   const [copied, setCopied] = useState<'idle' | 'ok' | 'fail'>('idle');
   const json = JSON.stringify(result, null, 2);
-  const s = result.summary;
+  const flags = result.detected_flags;
+  const count = (status: string) => flags.filter((f) => f.status === status).length;
 
   async function copy() {
     const ok = await copyText(json);
@@ -45,18 +52,17 @@ export default function ResultViewer({ result }: { result: RunResult }) {
   return (
     <div>
       <h3>Output</h3>
-      <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <Stat label="Flags checked" value={s.flags_checked} tone="border-line bg-neu-50" />
+      <div className="mt-3 grid grid-cols-1 gap-2 min-[420px]:grid-cols-3">
+        <Stat label="Detected" value={flags.length} tone="border-highlight-border bg-highlight" />
         <Stat
-          label="Findings"
-          value={s.findings_total}
-          tone="border-highlight-border bg-highlight"
+          label="Accepted"
+          value={count('ACCEPTED') + count('AUTO_ACCEPTED')}
+          tone="border-line bg-neu-50"
         />
-        <Stat label="Human reviewed" value={s.human_reviewed} tone="border-line bg-neu-50" />
-        <Stat label="Escalated" value={s.escalated} tone="border-error-mid bg-error-faint" />
+        <Stat label="Rejected" value={count('REJECTED')} tone="border-line bg-neu-50" />
       </div>
 
-      {/* One scrollable area: flag cards, goal scores, then the raw JSON (itself scrollable) at the bottom. */}
+      {/* One scrollable area: flag cards, then the raw JSON (itself scrollable) at the bottom. */}
       <div
         role="region"
         aria-label="Output details"
@@ -65,12 +71,12 @@ export default function ResultViewer({ result }: { result: RunResult }) {
       >
         <section aria-labelledby="out-flags">
           <h4 id="out-flags" className="mb-2">
-            Detected flags ({result.findings.length})
+            Detected flags ({flags.length})
           </h4>
-          {result.findings.length ? (
+          {flags.length ? (
             <ul className="space-y-3">
-              {result.findings.map((f) => (
-                <FindingCard key={f.finding_id} finding={f} />
+              {flags.map((f, i) => (
+                <FindingCard key={`${f.flag}-${i}`} finding={f} descriptions={descriptions} />
               ))}
             </ul>
           ) : (
@@ -79,15 +85,6 @@ export default function ResultViewer({ result }: { result: RunResult }) {
             </p>
           )}
         </section>
-
-        {result.goal_scoring && result.goal_scoring.length > 0 && (
-          <section aria-labelledby="out-goals">
-            <h4 id="out-goals" className="mb-2">
-              Trainee goal scores
-            </h4>
-            <GoalScores scores={result.goal_scoring} />
-          </section>
-        )}
 
         <section aria-labelledby="out-json">
           <div className="mb-2 flex items-center justify-between gap-3">

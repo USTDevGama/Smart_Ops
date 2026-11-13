@@ -125,11 +125,18 @@ describe('runs', () => {
     for (const item of review.review_items)
       last = await api.decide(run_id, item.item_id, { decision: 'accept' });
     expect(last.status).toBe('completed');
-    expect(last.result?.summary.human_reviewed).toBe(review.review_items.length);
-    expect(last.result?.findings.every((f) => f.status !== undefined)).toBe(true);
-    expect(last.result?.findings.every((f) => f.evidence_ids.length > 0)).toBe(true);
-    expect(last.result?.goal_scoring?.length).toBeGreaterThan(0);
-    expect(last.result?.goal_scoring?.[0].B_themes.G12).toBe('INSUFFICIENT_EVIDENCE');
+    const detected = last.result?.detected_flags ?? [];
+    expect(detected.length).toBeGreaterThan(0);
+    expect(detected.every((f) => /^(AUTO_)?ACCEPTED$|^REJECTED$/.test(f.status))).toBe(true);
+    expect(detected.every((f) => f.evidence_ids.length > 0)).toBe(true);
+    expect(detected.every((f) => /^\S+ <-> \S+$/.test(f.subject))).toBe(true);
+    expect(last.result?.batch_id).toBe(last.batch_id);
+    // the explanation is the agent's reasoning about the finding, not the flag's description
+    const flags = await api.listFlags();
+    for (const f of detected) {
+      expect(f.explanation.length).toBeGreaterThan(0);
+      for (const flag of flags) expect(f.explanation).not.toContain(flag.description);
+    }
     expect(await api.getResult(run_id)).toEqual(last.result);
 
     await expect(
@@ -143,7 +150,16 @@ describe('runs', () => {
     const r2 = await api.startRun({ filename: 'two.json', payload });
     const list = await api.listRuns();
     expect(list.map((r) => r.run_id)).toEqual([r2.run_id, r1.run_id]);
-    expect(list[1].filename).toBe('one.json');
+    expect(list[1].batch_id).toMatch(/^B-\d{4}$/);
+    expect(list[0].batch_id).not.toBe(list[1].batch_id);
+  });
+
+  it('uses the batch_id from the input when it has one', async () => {
+    const { run_id } = await api.startRun({
+      filename: 'a.json',
+      payload: { ...payload, batch_id: 'BATCH-2026-11' },
+    });
+    expect((await api.getRun(run_id)).batch_id).toBe('BATCH-2026-11');
   });
 
   it('refuses to start when no flags are enabled', async () => {

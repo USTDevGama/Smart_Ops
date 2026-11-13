@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { api } from '../api/client';
 import { isActive, useRun } from '../state/useRun';
+import { flagKey } from '../util/format';
 import Button from '../components/Button';
+import type { FlagDescriptions } from '../components/FlagFacts';
 import HistoryView from '../components/HistoryView';
 import JsonUploader, { type UploadedFile } from '../components/JsonUploader';
 import RunPanel from '../components/RunPanel';
@@ -22,6 +24,23 @@ export default function User() {
   // run opened from History (full width)
   const [openRunId, setOpenRunId] = useState<string | null>(null);
   const opened = useRun(openRunId);
+
+  // The agent output has only the flag name; its description comes from the flags table.
+  // If loading fails, the cards still show and say the description is not available.
+  const [descriptions, setDescriptions] = useState<FlagDescriptions>({});
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .listFlags()
+      .then((flags) => {
+        if (cancelled) return;
+        setDescriptions(Object.fromEntries(flags.map((f) => [flagKey(f.name), f.description])));
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   async function run() {
     if (!file) return;
@@ -85,7 +104,12 @@ export default function User() {
             className="min-h-[24rem] min-w-0 rounded-md border border-line bg-surface p-5"
           >
             {activeRunId ? (
-              <RunPanel run={active.run} error={active.error} onDecide={active.decide} />
+              <RunPanel
+                run={active.run}
+                error={active.error}
+                descriptions={descriptions}
+                onDecide={active.decide}
+              />
             ) : (
               <div className="grid h-full min-h-[20rem] place-items-center text-center text-body">
                 <div>
@@ -109,7 +133,12 @@ export default function User() {
             <Button variant="ghost" size="sm" className="mb-4" onClick={() => setOpenRunId(null)}>
               ← Back to history
             </Button>
-            <RunPanel run={opened.run} error={opened.error} onDecide={opened.decide} />
+            <RunPanel
+              run={opened.run}
+              error={opened.error}
+              descriptions={descriptions}
+              onDecide={opened.decide}
+            />
           </section>
         ) : (
           <HistoryView onOpen={setOpenRunId} />
