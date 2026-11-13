@@ -27,9 +27,10 @@ export const flagKey = (name: string) =>
 
 /** "R-02 <-> T-03" -> source "R-02" (the reviewer), trainee "T-03". Anything else is returned whole as the source. */
 export function parseSubject(subject: string): { source: string; trainee: string | null } {
-  const parts = subject.split('<->').map((p) => p.trim());
+  const text = typeof subject === 'string' ? subject : ''; // a missing subject from the backend must not crash the card
+  const parts = text.split('<->').map((p) => p.trim());
   if (parts.length === 2 && parts[0] && parts[1]) return { source: parts[0], trainee: parts[1] };
-  return { source: subject.trim(), trainee: null };
+  return { source: text.trim() || 'Not provided', trainee: null };
 }
 
 /** Title of a run: the batch id from the agent output, or a placeholder while the backend has not given one yet. */

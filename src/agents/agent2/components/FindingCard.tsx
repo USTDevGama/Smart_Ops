@@ -34,7 +34,10 @@ export default function FindingCard({
   finding: Finding;
   descriptions: FlagDescriptions;
 }) {
-  const s = statusStyle[f.status];
+  // A status the UI does not know (backend typo, new value) must not blank the page: show it as plain text.
+  const s = (statusStyle as Record<string, (typeof statusStyle)[FindingStatus] | undefined>)[
+    f.status
+  ] ?? { label: String(f.status), box: 'border-line bg-neu-50', icon: <WarningMarkIcon /> };
   return (
     <li className="rounded-md border border-line bg-surface p-4">
       <div className="flex flex-wrap items-start justify-between gap-2">

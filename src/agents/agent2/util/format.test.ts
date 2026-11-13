@@ -10,6 +10,10 @@ describe('format helpers', () => {
   it('keeps an unexpected subject whole instead of guessing', () => {
     expect(parseSubject('R-02')).toEqual({ source: 'R-02', trainee: null });
     expect(parseSubject('R-02 <->')).toEqual({ source: 'R-02 <->', trainee: null });
+    expect(parseSubject(undefined as unknown as string)).toEqual({
+      source: 'Not provided',
+      trainee: null,
+    });
   });
 
   it('matches agent flag names to table names', () => {
