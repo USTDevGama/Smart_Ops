@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAgent1Api } from '../api';
 import type { AdminCurriculumItem, SessionRow, SessionStatus } from '../api/types';
 import { StatusBadge } from '../components/StatusBadge';
-import { formatDate, score } from '../lib/format';
+import { formatDate, percent, score } from '../lib/format';
 
 const FILTERS: (SessionStatus | 'all')[] = ['all', 'pending_review', 'accepted', 'rejected'];
 
@@ -76,6 +76,7 @@ export function ReviewPage() {
                 <th>Curriculum</th>
                 <th className="col-date">Date</th>
                 <th className="col-score">Score</th>
+                <th className="col-confidence">Confidence</th>
                 <th>Status</th>
               </tr>
             </thead>
@@ -96,6 +97,9 @@ export function ReviewPage() {
                   <td className="col-date muted small">{formatDate(s.started_at)}</td>
                   <td className="col-score muted small">
                     {s.overall_score != null ? score(s.overall_score) : '—'}
+                  </td>
+                  <td className="col-confidence muted small">
+                    {s.assessment_confidence != null ? percent(s.assessment_confidence) : '—'}
                   </td>
                   <td>
                     <StatusBadge status={s.status} />
