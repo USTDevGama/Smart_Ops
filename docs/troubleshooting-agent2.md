@@ -63,7 +63,7 @@ IMAGE_TAG=$TAG docker compose -f deploy/compose.prod.yml --env-file /data/apps/s
 bash deploy/diagnose-agent2.sh
 ```
 
-The UI shows live data only if the image was built with `VITE_AGENT2_USE_MOCKS=false` (the Dockerfile line). While it is `true`, changing `.env` has no visible effect.
+The production image builds with `VITE_USE_MOCKS=false` (a Dockerfile line), so Agent 2 is live. If the page shows the mock banner, the image was built with `true` and changing `.env` has no visible effect.
 
 ## 5. What the person sees in the browser
 

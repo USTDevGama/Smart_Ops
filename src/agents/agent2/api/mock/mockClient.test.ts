@@ -15,8 +15,20 @@ let api: MockClient;
 const input = { name: 'Test flag', description: 'd', enabled: true };
 const payload = {
   records: [
-    { comment: 'He is too old to learn new tooling quickly' },
-    { comment: 'She is great at mentoring juniors' },
+    {
+      id: 'FB-001',
+      reviewer: 'R-01',
+      trainee: 'T-01',
+      rating: 2,
+      comment: 'He is too old to learn new tooling quickly',
+    },
+    {
+      id: 'FB-002',
+      reviewer: 'R-02',
+      trainee: 'T-02',
+      rating: 5,
+      comment: 'She is great at mentoring juniors',
+    },
   ],
 };
 
@@ -160,6 +172,34 @@ describe('runs', () => {
       payload: { ...payload, batch_id: 'BATCH-2026-11' },
     });
     expect((await api.getRun(run_id)).batch_id).toBe('BATCH-2026-11');
+  });
+
+  it('rejects input with missing or wrong fields, naming every problem with its record index', async () => {
+    const bad = {
+      records: [
+        payload.records[0],
+        payload.records[1],
+        { id: 'FB-003', reviewer: 'R-03', trainee: 'T-03', comment: 'No rating here' },
+        { id: 'FB-004', reviewer: '', trainee: 'T-04', rating: 'high', comment: 'Two problems' },
+      ],
+    };
+    const err = await api.startRun({ filename: 'bad.json', payload: bad }).catch((e) => e);
+    expect(err).toBeInstanceOf(ApiError);
+    expect(err).toMatchObject({ status: 400, code: 'validation_error' });
+    expect(err.message).toMatch(/3 problems/);
+    expect(err.details).toEqual([
+      { field: 'records[2].rating', message: 'Field required' },
+      { field: 'records[3].reviewer', message: 'String should have at least 1 character' },
+      { field: 'records[3].rating', message: 'Input should be a valid number' },
+    ]);
+    expect(await api.listRuns()).toHaveLength(0); // nothing was started
+  });
+
+  it('rejects input without a records list', async () => {
+    await expect(api.startRun({ filename: 'x.json', payload: {} })).rejects.toMatchObject({
+      status: 400,
+      details: [{ field: 'records', message: 'Field required' }],
+    });
   });
 
   it('refuses to start when no flags are enabled', async () => {

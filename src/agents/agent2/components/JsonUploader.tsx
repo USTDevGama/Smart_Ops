@@ -13,10 +13,15 @@ export interface UploadedFile {
 const TEXT_EXT = /\.(txt|text|md)$/i;
 const JSON_EXT = /\.json$/i;
 
+/** What plain text has no way to say. Used for every paragraph, so the backend's required fields are all present. */
+export const TEXT_PLACEHOLDER_REVIEWER = 'Unknown reviewer';
+export const TEXT_PLACEHOLDER_RATING = 3;
+
 /**
- * Plain text becomes the same shape as the JSON samples ({ dataset, records: [{ id, comment }] }) so the
- * backend contract is unchanged. Each blank-line separated paragraph is one record; a file with no blank
- * lines is split per non-empty line.
+ * Plain text becomes the same shape as the JSON samples ({ dataset, records: [{ id, reviewer, trainee, rating,
+ * comment }] }). Each blank-line separated paragraph is one record (a file with no blank lines is split per
+ * non-empty line). Text carries no metadata, so each record gets neutral placeholders: reviewer "Unknown reviewer",
+ * rating 3, and a unique generated id and trainee. JSON files are not touched; the backend checks them as supplied.
  */
 export function textToPayload(name: string, text: string) {
   const normalised = text.replace(/\r\n?/g, '\n').trim();
@@ -24,7 +29,16 @@ export function textToPayload(name: string, text: string) {
   const records = blocks
     .map((b) => b.trim().replace(/\s*\n\s*/g, ' '))
     .filter(Boolean)
-    .map((comment, i) => ({ id: `T-${String(i + 1).padStart(3, '0')}`, comment }));
+    .map((comment, i) => {
+      const n = String(i + 1).padStart(3, '0');
+      return {
+        id: `TXT-${n}`,
+        reviewer: TEXT_PLACEHOLDER_REVIEWER,
+        trainee: `UNKNOWN-${n}`,
+        rating: TEXT_PLACEHOLDER_RATING,
+        comment,
+      };
+    });
   return { dataset: name, records };
 }
 
@@ -168,7 +182,7 @@ export default function JsonUploader({
               <p className="text-xs text-body">
                 {fmtBytes(value.size)} ·{' '}
                 {value.kind === 'json'
-                  ? 'valid JSON'
+                  ? 'JSON, checked when you run'
                   : `text, ${(value.payload as { records: unknown[] }).records.length} record(s)`}
               </p>
             </div>

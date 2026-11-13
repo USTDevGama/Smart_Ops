@@ -60,6 +60,45 @@ export function recordIdFor(payload: unknown, path: string): string {
   return typeof id === 'string' || typeof id === 'number' ? String(id) : prefix;
 }
 
+/** One problem found in the uploaded input. Same shape as `details` in the real server's validation error. */
+export interface InputProblem {
+  field: string;
+  message: string;
+}
+
+const needsText = (v: unknown) =>
+  v === undefined
+    ? 'Field required'
+    : typeof v !== 'string'
+      ? 'Input should be a valid string'
+      : !v.trim()
+        ? 'String should have at least 1 character'
+        : null;
+
+/**
+ * Mirrors the real server's input check so the UI sees the same kind of 400: `{ records: [...] }` where every record
+ * has id, reviewer, trainee, rating (a number) and comment. Returns one entry per problem, e.g. "records[2].rating".
+ */
+export function checkInput(payload: unknown): InputProblem[] {
+  const records = (payload as { records?: unknown } | null | undefined)?.records;
+  if (records === undefined) return [{ field: 'records', message: 'Field required' }];
+  if (!Array.isArray(records) || records.length === 0)
+    return [{ field: 'records', message: 'Input should be a non-empty list' }];
+  const problems: InputProblem[] = [];
+  records.forEach((r, i) => {
+    const rec = (r && typeof r === 'object' ? r : {}) as Record<string, unknown>;
+    for (const key of ['id', 'reviewer', 'trainee', 'comment']) {
+      const m = needsText(rec[key]);
+      if (m) problems.push({ field: `records[${i}].${key}`, message: m });
+    }
+    if (rec.rating === undefined)
+      problems.push({ field: `records[${i}].rating`, message: 'Field required' });
+    else if (typeof rec.rating !== 'number' || !Number.isFinite(rec.rating))
+      problems.push({ field: `records[${i}].rating`, message: 'Input should be a valid number' });
+  });
+  return problems;
+}
+
 export interface PlannedFinding {
   flag_id: string;
   flag_name: string;
@@ -111,7 +150,9 @@ export function planRun(
   const pool = collectStrings(payload);
   // Prefer text inside a list (records, comments) over top-level labels such as a dataset name.
   const inList = pool.filter((p) => p.path.includes('['));
-  const evidencePool = inList.length ? inList : pool;
+  // Quote comments, not metadata such as the reviewer name.
+  const comments = pool.filter((p) => /\.comment$/.test(p.path));
+  const evidencePool = comments.length ? comments : inList.length ? inList : pool;
   const plan: PlannedFinding[] = flags.map((f) => {
     const rng = mulberry32(hash(`${runId}:${f.id}`));
     const raised = pool.length > 0 && rng() < 0.55;

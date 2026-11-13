@@ -38,9 +38,12 @@ test('trainee sees only the run page and can run and review', async ({ page }) =
   await page.getByRole('button', { name: 'Run agent' }).click();
   const output = page.getByLabel('Output JSON');
   await expect(async () => {
-    const groups = page.getByRole('group', { name: /^Decision for / });
-    if (await groups.count()) {
-      await groups.first().getByRole('button', { name: 'Accept' }).click();
+    // accept every item not yet decided (the number of review items depends on the run)
+    const undecided = page
+      .getByRole('group', { name: /^Decision for / })
+      .getByRole('button', { name: 'Accept', pressed: false });
+    if (await undecided.count()) {
+      await undecided.first().click();
     }
     await expect(output).toBeVisible({ timeout: 1_000 });
   }).toPass({ timeout: 45_000 });
@@ -67,6 +70,52 @@ test('trainee sees only the run page and can run and review', async ({ page }) =
   // each run is titled by its batch id, not by the uploaded file name
   await expect(page.getByText(/^Batch B-\d{4}$/).first()).toBeVisible();
   await expect(page.getByText('sample-input.json')).toHaveCount(0);
+});
+
+test('a rejected input keeps the main message and every field problem next to the form', async ({
+  page,
+}) => {
+  await signIn(page, 'tester', 'Trainee');
+  await page.getByRole('button', { name: /Bias Flagging Agent/ }).click();
+  const bad = {
+    records: [
+      { id: 'FB-001', reviewer: 'R-01', trainee: 'T-01', rating: 2, comment: 'Fine record' },
+      { id: 'FB-002', reviewer: 'R-01', trainee: 'T-01', rating: 2, comment: 'Fine record too' },
+      { id: 'FB-003', reviewer: 'R-01', trainee: 'T-01', comment: 'Missing a rating' },
+    ],
+  };
+  await page.getByTestId('file-input').setInputFiles({
+    name: 'bad.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify(bad)),
+  });
+  await page.getByRole('button', { name: 'Run agent' }).click();
+
+  const alert = page.getByRole('alert').filter({ hasText: 'The input is not valid' });
+  await expect(alert).toContainText('1 problem found');
+  const items = alert.getByRole('listitem');
+  await expect(items).toHaveCount(1);
+  await expect(items.first()).toHaveText('records[2].rating: Field required');
+
+  // it stays until the input changes (not a toast that disappears)
+  await page.waitForTimeout(5_500);
+  await expect(alert).toBeVisible();
+  await page.getByRole('button', { name: 'Remove' }).click();
+  await expect(alert).toHaveCount(0);
+});
+
+test('plain text and the sample both pass the input check', async ({ page }) => {
+  await signIn(page, 'tester', 'Trainee');
+  await page.getByRole('button', { name: /Bias Flagging Agent/ }).click();
+  await expect(page.getByText(/placeholders: reviewer “Unknown reviewer”/)).toBeVisible();
+
+  // text with two paragraphs: the placeholders make each record valid, so the run starts
+  await page
+    .getByLabel('Text to check')
+    .fill('First comment about delivery.\n\nSecond comment about tone.');
+  await page.getByRole('button', { name: 'Run agent' }).click();
+  await expect(page.getByText(/^Batch B-\d{4}$/)).toBeVisible();
+  await expect(page.getByText('The input is not valid')).toHaveCount(0);
 });
 
 test('admin sees only flag management: add, deactivate, delete', async ({ page }) => {

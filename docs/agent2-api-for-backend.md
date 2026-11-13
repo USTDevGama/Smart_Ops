@@ -24,15 +24,15 @@ Browser -> /agent2-api/api/v1/<path>   (dashboard origin, e.g. http://10.100.242
 
 Every request carries:
 
-| Header                                                    | When                  | Meaning                                                                                 |
-| --------------------------------------------------------- | --------------------- | --------------------------------------------------------------------------------------- |
-| `X-Session-Id: <uuid>`                                    | always                | One random id per browser tab session. **Scope run history to it** (and to the user).   |
-| `X-Dev-User: <name>` and `X-Dev-Role: trainee` or `admin` | today (dev login)     | Who is signed in. Role names are the portal's: `trainee` or `admin`.                    |
-| `Authorization: Bearer <token>`                           | later (Zitadel login) | Replaces the two dev headers with no UI change. See [auth-zitadel.md](auth-zitadel.md). |
+| Header                                                 | When                  | Meaning                                                                                 |
+| ------------------------------------------------------ | --------------------- | --------------------------------------------------------------------------------------- |
+| `X-Session-Id: <uuid>`                                 | always                | One random id per browser tab session. **Scope run history to it** (and to the user).   |
+| `X-Dev-User: <name>` and `X-Dev-Role: user` or `admin` | today (dev login)     | Who is signed in. The UI sends the portal's `trainee` as `user`; `admin` stays `admin`. |
+| `Authorization: Bearer <token>`                        | later (Zitadel login) | Replaces the two dev headers with no UI change. See [auth-zitadel.md](auth-zitadel.md). |
 
 **This is the main thing to fix.** The UI does not call `/auth/login` and has no password. Your backend currently expects its own JWT from `POST /auth/login` and reads the role from its database, so every call from the dashboard gets **401** today. Options:
 
-1. **For the demo:** in a non-production setting only (for example `ENV=local|dev`), accept `X-Dev-User` / `X-Dev-Role` and treat `trainee` as your `user` role. Never enable this in production; anyone could claim any role.
+1. **For the demo:** in a non-production setting only (for example `ENV=local|dev`), accept `X-Dev-User` / `X-Dev-Role` (`user` or `admin`). Never enable this in production; anyone could claim any role.
 2. **Later:** validate the Zitadel bearer token and read the role from it.
 
 Roles and what each may call (the UI also hides pages by role, but you must enforce it):
@@ -55,17 +55,17 @@ Every non-2xx response must use this body. The UI shows `message` to the person 
 
 If the body is not in this shape the UI falls back to the HTTP status text, so keep to it. Codes the UI and mock already use:
 
-| Status | `code`               | Used for                                                           |
-| ------ | -------------------- | ------------------------------------------------------------------ |
-| 400    | `validation_error`   | Bad input (empty flag name, fewer than 2 flags to merge, bad body) |
-| 401    | `unauthorized`       | No or invalid credentials                                          |
-| 403    | `forbidden`          | Role not allowed                                                   |
-| 404    | `not_found`          | Unknown flag, run or review item (also another session's run)      |
-| 409    | `duplicate_name`     | A flag with that name already exists (compare ignoring case)       |
-| 409    | `no_enabled_flags`   | Run started but every flag is disabled                             |
-| 409    | `run_not_reviewable` | Decision sent when the run is not in `needs_review`                |
-| 409    | `result_not_ready`   | `GET /runs/{id}/result` before the run is completed                |
-| 413    | any                  | Upload too large                                                   |
+| Status | `code`               | Used for                                                                                                                     |
+| ------ | -------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| 400    | `validation_error`   | Bad input (empty flag name, fewer than 2 flags to merge, bad run input). `details` may list `{ field, message }` per problem |
+| 401    | `unauthorized`       | No or invalid credentials                                                                                                    |
+| 403    | `forbidden`          | Role not allowed                                                                                                             |
+| 404    | `not_found`          | Unknown flag, run or review item (also another session's run)                                                                |
+| 409    | `duplicate_name`     | A flag with that name already exists (compare ignoring case)                                                                 |
+| 409    | `no_enabled_flags`   | Run started but every flag is disabled                                                                                       |
+| 409    | `run_not_reviewable` | Decision sent when the run is not in `needs_review`                                                                          |
+| 409    | `result_not_ready`   | `GET /runs/{id}/result` before the run is completed                                                                          |
+| 413    | any                  | Upload too large                                                                                                             |
 
 ## Endpoints
 
@@ -110,7 +110,9 @@ A **run** is one analysis of one uploaded batch of feedback.
 
 Returns `{ "run_id": "...", "session_id": "..." }`. Respond quickly and run the agent in the background; the UI then polls. Validate `payload` here and answer 400 with a useful message if it is not usable.
 
-- `payload` is whatever JSON the person uploaded. If they paste or upload **plain text**, the UI turns it into `{ "dataset": "<name>", "records": [ { "id": "...", "comment": "..." } ] }` with one record per paragraph. A sample is in `public/sample-input.json`.
+- `payload` is `{ "dataset": "<name>", "records": [ ... ] }`. Each record has **`id`, `reviewer`, `trainee`, `rating` (a number) and `comment`**. A JSON upload is sent exactly as the person supplied it, so the backend must validate it. A sample is in `public/sample-input.json`.
+- **Plain text** (pasted or a .txt file) is turned into the same shape by the UI, one record per paragraph. Text has no metadata, so each record gets placeholders: `id` `TXT-001`, `TXT-002` and so on, `reviewer` `"Unknown reviewer"`, `trainee` `UNKNOWN-001`, `UNKNOWN-002` and so on (unique per paragraph), and `rating` `3`.
+- **Validation errors:** answer 400 `validation_error` with `details` as a list of `{ "field": "records[2].rating", "message": "Field required" }`, one entry per problem. The UI keeps the main `message` next to the input form and lists every `field: message` entry, so write both for a person to read.
 - If the payload has its own `batch_id`, using it as the run's batch id is a good default.
 
 **`GET /runs/{run_id}`**: the UI polls this about every 0.7 s while `status` is `queued` or `running` (and every 2.8 s after an error). It stops when the status is anything else. Returns:
@@ -230,7 +232,7 @@ The card also shows the flag **description** (from `GET /flags`, see above). Any
 Run the UI against your backend on your machine:
 
 1. Start your backend on port **8001** (8000 belongs to Agent 3's backend).
-2. In this repo: `npm install`, then in PowerShell `$env:VITE_AGENT2_USE_MOCKS='false'; npm run dev` (bash: `VITE_AGENT2_USE_MOCKS=false npm run dev`).
+2. In this repo: `npm install`, then in PowerShell `npm run dev` (live is the default; set `VITE_USE_MOCKS=true` for the mock instead).
 3. Open <http://localhost:5173>, sign in as **Trainee** (run page) or **Admin** (flag page), open "Bias Flagging Agent".
 
 The dev server forwards `/agent2-api/...` to `http://localhost:8001/...` (change with `VITE_AGENT2_API_URL`). Open the browser's Network tab to see each call and your response.
@@ -268,4 +270,4 @@ Through the live dashboard the same call is `http://10.100.242.180:8086/agent2-a
 
 ## Not verified
 
-This page was written from the UI code, not from running it against your backend. I have not read your current backend code in this session, so the notes about its login and roles come from an earlier reading and may be out of date. The UI's live mode (`VITE_AGENT2_USE_MOCKS=false`) has not yet been run against a real backend.
+This page was written from the UI code, not from running it against your backend. I have not read your current backend code in this session, so the notes about its login and roles come from an earlier reading and may be out of date. The UI's live mode (the default) has not yet been run against a real backend.
