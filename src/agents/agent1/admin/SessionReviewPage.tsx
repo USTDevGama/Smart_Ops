@@ -205,10 +205,6 @@ function SessionDetail({
           <Metric label="Overall score" value={`${score(overall.score)} / 5`} />
           <Metric label="Assessment confidence" value={percent(overall.assessment_confidence)} />
           <Metric
-            label="Questions"
-            value={String(topics.length + (coverage.unscored_questions?.length ?? 0))}
-          />
-          <Metric
             label="Tracks covered"
             value={`${coverage.tracks_covered.length}/${coverage.tracks_total}`}
           />
