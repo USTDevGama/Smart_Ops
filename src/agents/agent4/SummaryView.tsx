@@ -1,206 +1,243 @@
-import { useRef } from 'react';
+// The results page, following the trainee report design (trainee-report 1.html). Used by the trainee
+// screen and by the evaluator's trainee detail. Every value comes from the summary.
 
-import type { GapSummary, RunStatus, ScoreRow, Summary } from './api';
+import { useState } from 'react';
+
+import { useAgent4Api, type RunStatus, type ScoreRow, type Summary } from './api';
+import {
+  exerciseTile,
+  groupScoreRows,
+  matchLabel,
+  notAssessedNote,
+  outcomeLine,
+  percentOfScale,
+  recommendationCards,
+  reportFileName,
+  scoreStatus,
+  STATUS_PILL_TEXT,
+  STATUS_TEXT,
+  type RecommendationCard as Card,
+  type ScoreStatus,
+} from './reportView';
 import styles from './SummaryView.module.css';
-
-// The scores run from 0 to 5 on the bars.
-const SCALE_MAX = 5;
-
-export const STATUS_LABEL: Record<RunStatus, string> = {
-  running: 'Running',
-  pending_review: 'Pending review',
-  failed: 'Failed',
-  approved: 'Approved',
-  rejected: 'Rejected',
-};
 
 /** Status is written out as text, so it never relies on colour alone. */
 export function StatusBadge({ status }: { status: RunStatus }) {
-  return <span className={`${styles.badge} ${styles[status]}`}>{STATUS_LABEL[status]}</span>;
+  return <span className={`${styles.badge} ${styles[status]}`}>{STATUS_TEXT[status]}</span>;
 }
 
-function pct(value: number): string {
-  return `${(value / SCALE_MAX) * 100}%`;
-}
+const PILL_CLASS: Record<ScoreStatus, string> = {
+  gap: `${styles.pill} ${styles.pillGap}`,
+  met: `${styles.pill} ${styles.pillMet}`,
+  not_assessed: `${styles.pill} ${styles.pillNa}`,
+};
 
-/** One goal's score as a bar against the gap threshold, with a Met / Gap pill. Every goal is
- * shown, whether it is a gap or not. Gap vs Met comes straight from score vs threshold, both real
- * numbers; no points are shown, since the threshold and the score can be equal. */
-function ScoreRowView({ row, threshold }: { row: ScoreRow; threshold: number }) {
+function Tile({ label, value, alert = false }: { label: string; value: string; alert?: boolean }) {
   return (
-    <div className={styles.scoreRow}>
+    <div className={alert ? `${styles.tile} ${styles.tileGap}` : styles.tile}>
+      <div className={styles.tileLabel}>{label}</div>
+      <div className={styles.tileValue}>{value}</div>
+    </div>
+  );
+}
+
+function ScoreLine({ row, threshold }: { row: ScoreRow; threshold: number }) {
+  const status = scoreStatus(row.score, threshold);
+  const isGap = status === 'gap';
+  return (
+    <div className={isGap ? `${styles.score} ${styles.scoreGap}` : styles.score}>
       <div className={styles.goal}>
         {row.goal} {row.label}
-        <div className={styles.small}>
-          {row.sources.length ? row.sources.join('; ') : 'No evidence yet'}
-        </div>
       </div>
-      {row.score === null ? (
-        <div className={styles.small}>Not assessed</div>
-      ) : (
-        <div
-          className={styles.track}
-          role="img"
-          aria-label={`${row.goal} ${row.label}: score ${row.score} of ${SCALE_MAX}, gap threshold ${threshold}`}
-        >
-          <div className={styles.fill} style={{ width: pct(row.score) }} />
-          <div className={styles.threshold} style={{ left: pct(threshold) }} />
-        </div>
-      )}
-      <div className={styles.value}>
-        <span className={styles.number}>{row.score ?? '-'}</span>
-        {row.score === null ? null : row.score <= threshold ? (
-          <span className={styles.pillGap}>Gap</span>
-        ) : (
-          <span className={styles.pillMet}>Met</span>
+      <div className={styles.track} aria-hidden="true">
+        {row.score !== null && (
+          <>
+            <div className={styles.fill} style={{ width: percentOfScale(row.score) }} />
+            <div className={styles.threshold} style={{ left: percentOfScale(threshold) }} />
+          </>
         )}
       </div>
+      <div className={styles.num}>{row.score === null ? '—' : row.score}</div>
+      <div className={PILL_CLASS[status]}>{STATUS_PILL_TEXT[status]}</div>
     </div>
   );
 }
 
-/** One recommendation card: the exercise the agent picked for one gap, and why. No invented
- * fields: the approved library has only an id, a title and minutes, all type "exercise", and no
- * due dates, so none of those are shown here. */
-function RecommendationCard({
-  gap,
-  exercise,
-}: {
-  gap: GapSummary;
-  exercise: GapSummary['exercises'][number];
-}) {
+function RecommendationCard({ card }: { card: Card }) {
   return (
-    <div className={styles.recCard}>
-      <div className={styles.recAvatar}>{exercise.title.charAt(0).toUpperCase()}</div>
-      <div className={styles.recBody}>
-        <div className={styles.recTop}>
-          <span className={styles.recTitle}>{exercise.title}</span>
-          <span className={styles.tag}>Exercise</span>
-        </div>
-        <div className={styles.small}>
-          {gap.goal} {gap.label} &middot; score {gap.score} &middot; {exercise.minutes} min
-        </div>
-        <p className={styles.small}>{gap.why}</p>
-      </div>
-    </div>
+    <article className={styles.exCard}>
+      <header className={styles.exHead}>
+        <h3 className={styles.exTitle}>{card.title}</h3>
+        {card.minutes !== null && <span className={styles.chip}>{card.minutes} min</span>}
+      </header>
+      <p className={styles.meta}>
+        <strong>Linked goal:</strong> {card.goal}
+      </p>
+      <p className={styles.meta}>
+        <strong>Why:</strong> {card.why}
+      </p>
+      <p className={styles.meta}>
+        <strong>{card.outcomes.length === 1 ? 'Outcome:' : 'Outcomes:'}</strong>
+      </p>
+      {card.outcomes.length === 0 ? (
+        <p className={styles.meta}>No outcome mapped yet (mapping not agreed).</p>
+      ) : (
+        <ul className={styles.outcomes}>
+          {card.outcomes.map((outcome) => (
+            <li key={outcome.id}>
+              {outcomeLine(outcome)}{' '}
+              <span className={styles.matchTag}>{matchLabel(outcome.match)}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </article>
   );
 }
 
-/** One of the agent's written texts (the full report). Shown as it was written, not recomputed. */
-function TextSection({
-  id,
-  heading,
-  text,
-  sectionRef,
-}: {
-  id: string;
-  heading: string;
-  text: string;
-  sectionRef?: React.Ref<HTMLElement>;
-}) {
-  return (
-    <section ref={sectionRef} className={styles.card} aria-labelledby={id}>
-      <div className={styles.sectionHead}>
-        <h2 id={id}>{heading}</h2>
-      </div>
-      <pre className={styles.report}>{text}</pre>
-    </section>
-  );
+/** Opens a save dialog for a file the browser already holds. */
+function saveBlob(blob: Blob, fileName: string): void {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-/** A tile that jumps the page to one section below, instead of the person scrolling past the
- * others to find it. */
-function NavTile({ label, value, onClick }: { label: string; value: string; onClick: () => void }) {
-  return (
-    <button type="button" className={styles.navTile} onClick={onClick}>
-      <span className={styles.navLabel}>{label}</span>
-      <span className={styles.navValue}>{value}</span>
-    </button>
-  );
-}
-
-/** The trainee's result: every goal's score as a bar, recommendation cards per gap, and the
- * agent's full report as text. All three come from the same checked data. Three tiles above the
- * sections jump straight to the one you click, instead of scrolling past the others. */
+/** The whole results page. Every value comes from the summary. */
 export function ResultsBlock({ summary }: { summary: Summary }) {
-  const gapsRef = useRef<HTMLElement>(null);
-  const recsRef = useRef<HTMLElement>(null);
-  const reportRef = useRef<HTMLElement>(null);
-  const exerciseCount = summary.gaps.reduce((n, g) => n + g.exercises.length, 0);
+  const api = useAgent4Api();
+  const [message, setMessage] = useState('');
+  const [busy, setBusy] = useState(false);
+  const threshold = summary.gap_threshold;
+  const groups = groupScoreRows(summary.scores, threshold);
+  const cards = recommendationCards(summary.gaps);
 
-  function goTo(ref: React.RefObject<HTMLElement | null>) {
-    ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  async function download() {
+    setBusy(true);
+    setMessage('');
+    try {
+      saveBlob(await api.downloadPdf(summary), reportFileName(summary.trainee_id));
+      setMessage('Report downloaded.');
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'The report could not be downloaded.');
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
-    <div className={styles.results}>
-      <div className={styles.sectionHead}>
-        <h2>Trainee {summary.trainee_id}</h2>
-        <StatusBadge status={summary.status} />
-      </div>
+    <div className={styles.page}>
+      <header className={styles.head}>
+        <div>
+          <div className={styles.eyebrow}>Skill assessment report</div>
+          <h2 className={styles.title}>Trainee {summary.trainee_id}</h2>
+        </div>
+        <div className={styles.actions}>
+          <span className={`${styles.status} ${styles[`status_${summary.status}`]}`}>
+            {STATUS_TEXT[summary.status]}
+          </span>
+          <div className={styles.saved}>Report saved · run {summary.run_id.slice(0, 8)}</div>
+          <button
+            className={styles.download}
+            type="button"
+            onClick={() => void download()}
+            disabled={busy}
+          >
+            {busy ? 'Making report…' : 'Download report'}
+          </button>
+          <p className={styles.statusLine} role="status" aria-live="polite">
+            {message}
+          </p>
+        </div>
+      </header>
 
-      <div className={styles.navStrip}>
-        <NavTile
+      <div className={styles.tiles}>
+        <Tile label="Goals assessed" value={`${summary.assessed_count} of ${summary.goal_count}`} />
+        <Tile
           label="Skill gaps"
           value={String(summary.gaps.length)}
-          onClick={() => goTo(gapsRef)}
+          alert={summary.gaps.length > 0}
         />
-        <NavTile
-          label="Recommendations"
-          value={String(exerciseCount)}
-          onClick={() => goTo(recsRef)}
-        />
-        <NavTile label="Report" value="View" onClick={() => goTo(reportRef)} />
+        <Tile label="Exercises" value={exerciseTile(summary.gaps)} />
+        <Tile label="Strong areas" value={String(summary.strong.length)} />
       </div>
+
+      <section className={styles.section} aria-labelledby="rpt-overview">
+        <h2 id="rpt-overview" className={styles.h2}>
+          Overview
+        </h2>
+        <p className={styles.overview}>{summary.overview}</p>
+      </section>
 
       <div className={styles.columns}>
-        <div className={styles.stack}>
-          <section ref={gapsRef} className={styles.card} aria-labelledby="gaps-heading">
-            <div className={styles.sectionHead}>
-              <h2 id="gaps-heading">Skill gaps</h2>
-              <span className={styles.small}>Current vs. target</span>
-            </div>
-            {summary.scores.map((row) => (
-              <ScoreRowView key={row.goal} row={row} threshold={summary.gap_threshold} />
+        <section className={styles.section} aria-labelledby="rpt-scores">
+          <h2 id="rpt-scores" className={styles.h2}>
+            Scores by goal
+          </h2>
+          <div className={styles.scroll} tabIndex={0} aria-label="Scores by goal">
+            {groups.map((group) => (
+              <div key={group.status}>
+                <div className={styles.group}>{group.title}</div>
+                {group.rows.map((row) => (
+                  <ScoreLine key={row.goal} row={row} threshold={threshold} />
+                ))}
+              </div>
             ))}
-            <div className={styles.legend}>
-              <span className={styles.legendBar}>Current level</span>
-              <span className={styles.legendMark}>
-                Target (gap threshold {summary.gap_threshold})
-              </span>
-            </div>
-          </section>
+          </div>
+        </section>
 
-          <section ref={recsRef} className={styles.card} aria-labelledby="recs-heading">
-            <div className={styles.sectionHead}>
-              <h2 id="recs-heading">Recommendations</h2>
-              <span className={styles.small}>{exerciseCount} exercises</span>
-            </div>
-            {summary.gaps.length === 0 ? (
-              <p className={styles.small}>No goal is a skill gap, so no exercise is needed.</p>
+        <section className={styles.section} aria-labelledby="rpt-recs">
+          <h2 id="rpt-recs" className={styles.h2}>
+            Recommended exercises
+          </h2>
+          <div className={styles.scroll} tabIndex={0} aria-label="Recommended exercises">
+            {cards.length === 0 ? (
+              <p className={styles.muted}>No goal is a skill gap, so no exercise is needed.</p>
             ) : (
-              summary.gaps.map((gap) =>
-                gap.exercises.length === 0 ? (
-                  <p key={gap.goal} className={styles.small}>
-                    {gap.goal} {gap.label}: no approved exercise for this goal yet.
-                  </p>
-                ) : (
-                  gap.exercises.map((exercise) => (
-                    <RecommendationCard key={exercise.id} gap={gap} exercise={exercise} />
-                  ))
-                ),
-              )
+              cards.map((card) => <RecommendationCard key={card.key} card={card} />)
             )}
-          </section>
-        </div>
-
-        <TextSection
-          id="report-heading"
-          heading="Assessment report"
-          text={summary.report}
-          sectionRef={reportRef}
-        />
+          </div>
+        </section>
       </div>
+
+      <section className={styles.section} aria-labelledby="rpt-strong">
+        <h2 id="rpt-strong" className={styles.h2}>
+          Strong areas
+        </h2>
+        {summary.strong.length === 0 ? (
+          <p className={styles.muted}>No goal scores 4 or above yet.</p>
+        ) : (
+          <div className={styles.chips}>
+            {summary.strong.map((row) => (
+              <span key={row.goal} className={styles.strongChip}>
+                {row.goal} {row.label} · {row.score}
+              </span>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className={styles.section} aria-labelledby="rpt-na">
+        <h2 id="rpt-na" className={styles.h2}>
+          Not assessed
+        </h2>
+        {summary.not_assessed.length === 0 ? (
+          <p className={styles.muted}>Every goal was assessed.</p>
+        ) : (
+          <p className={styles.notice}>
+            {notAssessedNote(summary.not_assessed)} This is not a low score.
+          </p>
+        )}
+      </section>
+
+      <footer className={styles.footer}>
+        Generated from the trainee&apos;s assessment results. Draft, not reviewed: a reviewer must
+        approve it before it is shared.
+      </footer>
     </div>
   );
 }

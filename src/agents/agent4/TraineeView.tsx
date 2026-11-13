@@ -6,6 +6,7 @@ import { useState, type FormEvent } from 'react';
 import { Alert, Button, Input, Spinner } from '@/components/ui';
 import { ApiError, isMockMode, useAgent4Api, type Summary } from './api';
 import { ResultsBlock } from './SummaryView';
+import { summaryErrorText } from './reportView';
 import styles from './AgentScreen.module.css';
 
 type Result =
@@ -33,11 +34,10 @@ export function TraineeView() {
     } catch (error) {
       if (error instanceof ApiError && error.status === 404) {
         setResult({ kind: 'none', traineeId: id });
+      } else if (error instanceof ApiError) {
+        setResult({ kind: 'error', text: summaryErrorText(error.status, 'trainee') });
       } else {
-        setResult({
-          kind: 'error',
-          text: error instanceof Error ? error.message : 'The results could not be loaded.',
-        });
+        setResult({ kind: 'error', text: 'The results could not be loaded.' });
       }
     }
   }
@@ -46,7 +46,7 @@ export function TraineeView() {
     <div className={styles.page}>
       <div className={styles.pageHead}>
         <h1>My skill results</h1>
-        <p>Enter your trainee ID to see your skill gaps, recommendations and assessment report.</p>
+        <p>Enter your trainee ID to see your skill gaps, recommendations and skill report.</p>
       </div>
 
       <form className={styles.lookup} onSubmit={lookup}>
@@ -71,9 +71,7 @@ export function TraineeView() {
         )}
         {result.kind === 'loading' && <Spinner label="Loading results" />}
         {result.kind === 'none' && (
-          <p className={styles.empty}>
-            No results yet for <strong>{result.traineeId}</strong>. Check the ID and try again.
-          </p>
+          <p className={styles.empty}>{summaryErrorText(404, 'trainee')}</p>
         )}
         {result.kind === 'error' && <Alert kind="error">{result.text}</Alert>}
         {result.kind === 'ok' && <ResultsBlock summary={result.summary} />}

@@ -10,6 +10,8 @@ export interface Agent4Api {
   /** Starts an assessment from the trainee database. 404 when the trainee is unknown. */
   assess(traineeId: string): Promise<{ run_id: string; status: RunStatus }>;
   submitReview(runId: string, body: ReviewBody): Promise<{ run_id: string; status: RunStatus }>;
+  /** Builds the PDF on the server from the summary the screen already has. The agent is not called. */
+  downloadPdf(summary: Summary): Promise<Blob>;
 }
 
 export class ApiError extends Error {

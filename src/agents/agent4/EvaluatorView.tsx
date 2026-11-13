@@ -6,6 +6,7 @@ import { Alert, Button, Input, Select, Spinner } from '@/components/ui';
 import { ApiError, useAgent4Api, type RunStatus, type Summary, type TraineeRow } from './api';
 import { ReviewPanel } from './ReviewPanel';
 import { ResultsBlock, StatusBadge } from './SummaryView';
+import { summaryErrorText } from './reportView';
 import styles from './AgentScreen.module.css';
 
 // Filter value for trainees with no run yet (their status is null).
@@ -165,8 +166,10 @@ function TraineeDetail({ traineeId, onBack }: { traineeId: string; onBack: () =>
     } catch (err) {
       if (err instanceof ApiError && err.status === 404) {
         setMissing(true);
+      } else if (err instanceof ApiError) {
+        setError(summaryErrorText(err.status, 'admin'));
       } else {
-        setError(err instanceof Error ? err.message : 'The results could not be loaded.');
+        setError('The results could not be loaded.');
       }
     }
   }, [api, traineeId]);
@@ -195,10 +198,12 @@ function TraineeDetail({ traineeId, onBack }: { traineeId: string; onBack: () =>
           Back to all trainees
         </Button>
       </div>
-      <div className={styles.pageHead}>
-        <h1>Trainee {traineeId}</h1>
-        {summary && <StatusBadge status={summary.status} />}
-      </div>
+      {/* With results, the results block carries the title and status, so it is not repeated. */}
+      {!summary && (
+        <div className={styles.pageHead}>
+          <h1>Trainee {traineeId}</h1>
+        </div>
+      )}
 
       {error && <Alert kind="error">{error}</Alert>}
       {!summary && !error && !missing && <Spinner label="Loading results" />}

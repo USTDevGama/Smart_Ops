@@ -10,6 +10,7 @@ export type TraineeRow = {
   last_run_at: string | null;
 };
 
+// One goal's score. Goals come back in code order G01 to G12. score is null when not assessed.
 export type ScoreRow = {
   goal: string;
   label: string;
@@ -19,18 +20,18 @@ export type ScoreRow = {
 
 export type Exercise = { id: string; title: string; minutes: number };
 
-export type Outcome = { id: string; wording: string };
+// One outcome linked to a gap. match is the strength of this link: strong, partial, weak or none.
+export type Outcome = { id: string; wording: string; match: string };
 
 export type GapSummary = {
   goal: string;
   label: string;
   score: number;
-  severity: string;
   evidence: string[];
   outcome_match: string;
   exercises: Exercise[];
   outcomes: Outcome[];
-  // One sentence from the agent: why the exercise fits (or why none is recommended).
+  // Agent-written, plain text: why the exercise fits this gap. Never render it as HTML.
   why: string;
 };
 
@@ -38,6 +39,8 @@ export type Summary = {
   run_id: string;
   status: RunStatus;
   trainee_id: string;
+  // Agent-written, plain text, 2 to 3 sentences. Never render it as HTML.
+  overview: string;
   assessed_count: number;
   goal_count: number;
   gap_threshold: number;
@@ -47,10 +50,6 @@ export type Summary = {
   not_assessed: { goal: string; label: string }[];
   review_required: boolean;
   versions: { rules: string; mapping: string; content_library: string };
-  // Three texts the agent writes; the screen shows all three, each from the same checked data.
-  skill_gaps: string;
-  recommendations: string;
-  report: string;
 };
 
 export type ReviewBody = {
