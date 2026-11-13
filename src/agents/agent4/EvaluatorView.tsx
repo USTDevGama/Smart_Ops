@@ -8,6 +8,8 @@ import { ReviewPanel } from './ReviewPanel';
 import { ResultsBlock, StatusBadge } from './SummaryView';
 import styles from './AgentScreen.module.css';
 
+// Filter value for trainees with no run yet (their status is null).
+const NOT_ASSESSED = 'not_assessed';
 const STATUSES: RunStatus[] = ['pending_review', 'approved', 'rejected', 'failed', 'running'];
 const STATUS_TEXT: Record<RunStatus, string> = {
   running: 'Running',
@@ -50,7 +52,8 @@ function TraineeList({ onOpen }: { onOpen: (traineeId: string) => void }) {
     const q = search.trim().toLowerCase();
     return (rows ?? []).filter(
       (row) =>
-        (!q || row.trainee_id.toLowerCase().includes(q)) && (!status || row.status === status),
+        (!q || row.trainee_id.toLowerCase().includes(q)) &&
+        (!status || (status === NOT_ASSESSED ? row.status === null : row.status === status)),
     );
   }, [rows, search, status]);
 
@@ -78,6 +81,7 @@ function TraineeList({ onOpen }: { onOpen: (traineeId: string) => void }) {
               onChange={(event) => setStatus(event.target.value)}
             >
               <option value="">All statuses</option>
+              <option value={NOT_ASSESSED}>Not assessed</option>
               {STATUSES.map((value) => (
                 <option key={value} value={value}>
                   {STATUS_TEXT[value]}
@@ -126,9 +130,15 @@ function TraineeList({ onOpen }: { onOpen: (traineeId: string) => void }) {
                     </button>
                   </td>
                   <td>
-                    <StatusBadge status={row.status} />
+                    {row.status ? (
+                      <StatusBadge status={row.status} />
+                    ) : (
+                      <span className={styles.notAssessed}>Not assessed</span>
+                    )}
                   </td>
-                  <td className={styles.number}>{row.last_run_at.slice(0, 10)}</td>
+                  <td className={styles.number}>
+                    {row.last_run_at ? row.last_run_at.slice(0, 10) : '-'}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -144,17 +154,21 @@ function TraineeDetail({ traineeId, onBack }: { traineeId: string; onBack: () =>
   const { user } = useAuth();
   const [summary, setSummary] = useState<Summary | null>(null);
   const [missing, setMissing] = useState(false);
+  const [incomplete, setIncomplete] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
 
   const load = useCallback(async () => {
     setError(null);
     setMissing(false);
+    setIncomplete(false);
     try {
       setSummary(await api.getSummary(traineeId));
     } catch (err) {
       if (err instanceof ApiError && err.status === 404) {
         setMissing(true);
+      } else if (err instanceof ApiError && err.status === 409) {
+        setIncomplete(true);
       } else {
         setError(err instanceof Error ? err.message : 'The results could not be loaded.');
       }
@@ -191,7 +205,12 @@ function TraineeDetail({ traineeId, onBack }: { traineeId: string; onBack: () =>
       </div>
 
       {error && <Alert kind="error">{error}</Alert>}
-      {!summary && !error && !missing && <Spinner label="Loading results" />}
+      {!summary && !error && !missing && !incomplete && <Spinner label="Loading results" />}
+      {incomplete && (
+        <div className={styles.card}>
+          <p>{traineeId} needs to complete all assessments before results can be shown.</p>
+        </div>
+      )}
       {missing && (
         <div className={styles.card}>
           <p>No assessment for {traineeId} yet.</p>

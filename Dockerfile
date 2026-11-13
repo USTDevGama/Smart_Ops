@@ -9,15 +9,18 @@ COPY . .
 # VITE_* values are bundled into the browser (public). Production talks to the real API.
 ARG VITE_USE_MOCKS=false
 ENV VITE_USE_MOCKS=$VITE_USE_MOCKS
+# Agent 2 (Bias Flagging) runs on mock data until the Pod 2 backend is connected. Then set this to false.
+ARG VITE_AGENT2_USE_MOCKS=true
+ENV VITE_AGENT2_USE_MOCKS=$VITE_AGENT2_USE_MOCKS
 RUN npm run build
 
-# ---- runtime: nginx serves the static files and proxies /agent3-api ----
+# ---- runtime: nginx serves the static files and proxies /agent1-api, /agent2-api, /agent3-api and /agent4-api ----
 FROM nginx:1.27-alpine
 # The image's entrypoint runs envsubst on /etc/nginx/templates/*.template at start,
-# so AGENT{1,3,4}_API_URL are set at runtime (server .env), not baked into the image.
+# so AGENT{1,2,3,4}_API_URL are set at runtime (server .env), not baked into the image.
 # The filter limits substitution to those variables, so nginx's own $host, $uri,
 # $remote_addr etc. are never touched. Output goes to /etc/nginx/conf.d/default.conf.
-ENV NGINX_ENVSUBST_FILTER='AGENT[134]_API_URL'
+ENV NGINX_ENVSUBST_FILTER='AGENT[1234]_API_URL'
 # Lets the deploy job prune only this app's dangling images, never another pod's.
 LABEL app=smart-ops-dashboard
 COPY deploy/nginx.conf.template /etc/nginx/templates/default.conf.template

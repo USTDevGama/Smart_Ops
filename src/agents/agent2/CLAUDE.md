@@ -1,39 +1,35 @@
-﻿# Agent 2: guidance for Claude Code
+# Bias Flagging Agent (agent2): guidance for Claude Code
 
-The rules in the root `CLAUDE.md` apply. This file adds what is specific to this agent. **Fill in the blanks first**; every later Claude session starts from this file.
+The rules in the root `CLAUDE.md` apply. This file adds what is specific to this agent.
 
 ## Scope
 
-- You may edit: files in `src/agents/agent2/`, this agent's entry in `src/agents/registry.ts`, and this agent's specs in `e2e/`.
-- You may not edit: other agents, `src/components/ui`, `src/auth`, `src/shell`, `src/home`, `src/styles`. If you need a change there, stop and propose it.
-- Import only from this folder, `@/components/ui`, `@/auth`, `@/styles`.
+- You may edit: files in `src/agents/agent2/`, this agent's entry in `src/agents/registry.ts`, `tailwind.config.js` and this agent's proxy entry in `vite.config.ts`.
+- You may not edit: other agents, `src/components/ui`, `src/auth`, `src/shell`, `src/home`, `src/styles`.
+- Import only from this folder, `@/auth` (only `host/useHostAuth.ts` does) and the tokens in `src/styles`.
 
-## Migration source
+## What it does
 
-This folder receives Team 2's **existing UI**. The old UI is read only: never edit it.
+Checks feedback text against admin-managed bias flags, with human review of low-confidence findings. Source of truth for the
+contract: `api/types.ts` and `Smart_Ops_Pod2/contracts/ui_api.openapi.yaml`.
 
-- Old UI location: _path or repository_. Run it with: _command_.
-- Backend it calls: _base URL_ and how to run it locally.
-- Screen list and progress: `MIGRATION.md` (keep it current).
+## Roles and pages (strictly separate)
 
-## What this agent does
+| Role                | Page                                                       |
+| ------------------- | ---------------------------------------------------------- |
+| admin               | `pages/Admin.tsx` (flag management)                        |
+| any other (trainee) | `pages/User.tsx` (add input, run, review, output, history) |
 
-_One paragraph: who uses it and what for. Then rename the card in `registry.ts`._
+`index.tsx` decides from `useHostAuth()`. The backend enforces roles again (401/403).
 
-## Roles and pages
+## Rules specific to this folder
 
-Only a landing page exists so far. Roles are strictly separate: put pages under `trainee/` and `admin/` and choose them from `useAuth().user.role` in `index.tsx`, as `src/agents/agent3` does.
-
-## Backend
-
-_None yet._ Follow `src/agents/agent3/api/` (interface + real client + mock) and use `useAuth().getAuthHeaders()`. Add a proxy entry for your backend in `vite.config.ts`.
+- All backend access goes through `api/client.ts`. Components never call `fetch`. Everything under `api/mock/` is mock only.
+- Auth only through `host/`: never read storage, tokens or headers elsewhere. `host/useHostAuth.ts` is the only file that imports `@/auth`.
+- The UI never decides which findings need review; it renders `Run.review_items` as given.
+- Styling: Tailwind utilities that map to the design tokens (`text-heading`, `bg-surface`, `border-line`, `bg-primary`, status sets). No hex values. Status is icon + text + colour. Do not use `text-accent`, `warning` or `neu-500` for text on white.
+- A contract change = edit `api/types.ts` together with the OpenAPI file and samples in `Smart_Ops_Pod2`.
 
 ## Run and test
 
-`npm run dev`, sign in, open the Agent 2 card. Tests: `npm test`, `npm run test:e2e`.
-
-## Notes for Claude
-
-- Port the old UI's **behaviour** exactly; build the **look** from the UI kit and tokens, never from the old styling.
-- Streamlit-to-React mapping and a worked example: `docs/building-with-claude-code.md`. Reference code: `src/agents/agent3`. Use `/migrate-screen agent2 <old screen>`.
-- Keep this folder's `README.md` and `MIGRATION.md` up to date.
+`npm run dev`, sign in, open the card. Tests: `npm test`.

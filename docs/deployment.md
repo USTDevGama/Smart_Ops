@@ -11,12 +11,12 @@ The common dashboard (shared by Pods A/B/C/D) is built into one nginx image and 
 
 ## Files
 
-| File                         | Purpose                                                                 |
-| ---------------------------- | ----------------------------------------------------------------------- |
-| `Dockerfile`                 | Node build stage, then `nginx:1.27-alpine` as non-root, `dist/` on 8080 |
-| `deploy/nginx.conf.template` | SPA fallback, `/healthz`, and `/agent3-api/` proxy to Pod3              |
-| `deploy/compose.prod.yml`    | Own Compose project `smart-ops-dashboard`, own default network          |
-| `deploy/.env.example`        | Server-side values (copied to `/data/apps/smart-ops-dashboard/.env`)    |
+| File                         | Purpose                                                                                                  |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `Dockerfile`                 | Node build stage, then `nginx:1.27-alpine` as non-root, `dist/` on 8080                                  |
+| `deploy/nginx.conf.template` | SPA fallback, `/healthz`, and the `/agent1-api/`, `/agent2-api/`, `/agent3-api/`, `/agent4-api/` proxies |
+| `deploy/compose.prod.yml`    | Own Compose project `smart-ops-dashboard`, own default network                                           |
+| `deploy/.env.example`        | Server-side values (copied to `/data/apps/smart-ops-dashboard/.env`)                                     |
 
 ## Runner
 
@@ -27,6 +27,8 @@ Jobs run on a self-hosted runner with exactly these labels: `self-hosted`, `linu
 `/data/apps/smart-ops-dashboard/.env` lives only on the server, outside the runner workspace, so workspace cleanup never removes it. Values:
 
 - `DASHBOARD_PORT`: host port. Required; there is no default. Check it is free first: `ss -ltn | grep -E ':8180\b' || echo "8180 free"` (8180 is only a suggestion).
+- `AGENT1_API_URL`: Pod1 backend (Viva Agent, agent 1) as seen from the container, no trailing slash. Pod1's backend publishes its own host port (`BACKEND_PORT` in that repo's `deploy/`); coordinate the port with whoever deploys Pod1.
+- `AGENT2_API_URL`: Pod2 backend (Bias Flagging, agent 2), same rules as below. Optional; until it is set, agent 2 calls get a 502. Details: [agent2-backend-integration.md](agent2-backend-integration.md).
 - `AGENT3_API_URL`: Pod3 backend as seen from the container, no trailing slash. nginx reads it at container start. On Linux the container reaches the VM host through `host.docker.internal`, which `compose.prod.yml` maps with `extra_hosts: host-gateway`.
 
 Nothing secret belongs in the image or this repo; `VITE_*` values are public.
@@ -48,5 +50,5 @@ Older SHA-tagged images stay on the VM (`docker images smart-ops-dashboard`). Cl
 ## Known limits
 
 - Login is still the development login (no real authentication). Do not expose the port beyond the trusted network until Zitadel is wired in ([auth-zitadel.md](auth-zitadel.md)).
-- Agents 1, 3 and 4 have a backend proxy (`AGENT1_API_URL`, `AGENT3_API_URL`, `AGENT4_API_URL`). Add a `location` for any further agent API in `deploy/nginx.conf.template` and a matching env var (and add it to `NGINX_ENVSUBST_FILTER` in the Dockerfile).
-- Agent 1's backend (Smart_Ops_Pod1) publishes no host port by default; its own `deploy/compose.prod.yml` must set `BACKEND_PORT` and this dashboard's `AGENT1_API_URL` must point at `http://host.docker.internal:<that port>` - the two deploys are independent and must be coordinated by hand.
+- Agents 1, 2, 3 and 4 all have a backend proxy (`AGENT1_API_URL`, `AGENT2_API_URL`, `AGENT3_API_URL`, `AGENT4_API_URL`). To add another, add a `location` in `deploy/nginx.conf.template`, a matching env var in `compose.prod.yml` and `deploy/.env.example`, and add it to `NGINX_ENVSUBST_FILTER` in the Dockerfile.
+- Agent 1's backend (Smart_Ops_Pod1) publishes its own host port (`BACKEND_PORT` in that repo's `deploy/`); the two deploys (this dashboard and Pod1) are independent repos/runners and the chosen port must be coordinated by hand.

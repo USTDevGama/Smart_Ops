@@ -36,12 +36,37 @@ function summaryFor(traineeId: string, runId: string, status: RunStatus): Summar
         outcome_match: 'partial',
         exercises: [{ id: 'EX-07', title: 'Estimate a small change list', minutes: 30 }],
         outcomes: [{ id: 'OUT-3', wording: 'Gives a range with stated assumptions' }],
+        why: 'Estimation scored 2, below the gap threshold.',
       },
     ],
     strong: [{ goal: 'G1', label: 'Client listening', score: 4 }],
     not_assessed: [{ goal: 'G4', label: 'Written updates' }],
     review_required: true,
     versions: { rules: 'r-0.3', mapping: 'm-draft-1', content_library: 'cl-2026-10' },
+    skill_gaps:
+      'G2 Estimation: score 2, severity moderate\n' +
+      '  Evidence: feedback: F-11, interview: Q5\n' +
+      '  Outcome OUT-3 (partial match): Gives a range with stated assumptions.\n',
+    recommendations:
+      'G2 Estimation (score 2)\n' +
+      '  Exercise: EX-07 Estimate a small change list (30 min)\n' +
+      '  Why: Estimation scored 2, below the gap threshold.\n',
+    report:
+      `Trainee ${traineeId}\n\n` +
+      'Assessed 3 of 4 goals.\n\n' +
+      'Scores\n' +
+      '  G1 Client listening                     4\n' +
+      '  G2 Estimation                            2\n' +
+      '  G3 Escalation handling                   3\n' +
+      '  G4 Written updates              not assessed\n\n' +
+      'Areas to work on\n' +
+      '  G2 Estimation: score 2, severity moderate\n' +
+      '    Exercise: EX-07 Estimate a small change list (30 min)\n' +
+      '    Outcome OUT-3 (partial match): Gives a range with stated assumptions.\n\n' +
+      'Strong areas (score 4 or above)\n' +
+      '  G1 Client listening: 4\n\n' +
+      'Not assessed\n' +
+      '  G4 Written updates\n',
   };
 }
 
@@ -54,12 +79,18 @@ const store = new Map<string, StoredRun>([
 ]);
 let runCounter = 100;
 
+// Every trainee in the trainee database, as the real list returns them. T-12 has no run yet.
+const TRAINEE_DB = ['T-06', 'T-09', 'T-12'];
+
 function rowsOf(): TraineeRow[] {
-  return [...store.entries()].map(([trainee_id, record]) => ({
-    trainee_id,
-    status: record.status,
-    last_run_at: '2026-11-01T09:00:00Z',
-  }));
+  return TRAINEE_DB.map((trainee_id) => {
+    const record = store.get(trainee_id);
+    return {
+      trainee_id,
+      status: record?.status ?? null,
+      last_run_at: record ? '2026-11-01T09:00:00Z' : null,
+    };
+  });
 }
 
 export function createMockApi(): Agent4Api {

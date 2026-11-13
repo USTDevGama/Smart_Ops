@@ -49,13 +49,14 @@ Each agent owns its API client. Agent 3 uses an `Agent3Api` interface with two i
 
 ## Technology choices
 
-| Choice                                 | Why                                                           |
-| -------------------------------------- | ------------------------------------------------------------- |
-| Vite + React + TypeScript              | Fast, standard, typed contracts between teams                 |
-| Plain CSS + CSS modules + `tokens.css` | Matches the spec's CSS variables, no extra framework to learn |
-| React Router                           | Nested routes per agent                                       |
-| Vitest + Testing Library               | Same config as Vite                                           |
-| System font stack                      | No font download. Roboto in the Figma render is not bundled   |
+| Choice                                 | Why                                                                                                                                                       |
+| -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Vite + React + TypeScript              | Fast, standard, typed contracts between teams                                                                                                             |
+| Plain CSS + CSS modules + `tokens.css` | Matches the spec's CSS variables, no extra framework to learn                                                                                             |
+| React Router                           | Nested routes per agent                                                                                                                                   |
+| Vitest + Testing Library               | Same config as Vite                                                                                                                                       |
+| Tailwind CSS (agent2 only)             | Agent 2's merged UI uses it, mapped to the design tokens. Scoped to `src/agents/agent2` in `tailwind.config.js`, reset off, so other pages are unaffected |
+| System font stack                      | No font download. Roboto in the Figma render is not bundled                                                                                               |
 
 ## Out of scope for now
 

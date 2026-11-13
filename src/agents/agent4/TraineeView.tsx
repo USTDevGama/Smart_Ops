@@ -12,6 +12,7 @@ type Result =
   | { kind: 'idle' }
   | { kind: 'loading' }
   | { kind: 'none'; traineeId: string }
+  | { kind: 'incomplete' }
   | { kind: 'error'; text: string }
   | { kind: 'ok'; summary: Summary };
 
@@ -33,6 +34,8 @@ export function TraineeView() {
     } catch (error) {
       if (error instanceof ApiError && error.status === 404) {
         setResult({ kind: 'none', traineeId: id });
+      } else if (error instanceof ApiError && error.status === 409) {
+        setResult({ kind: 'incomplete' });
       } else {
         setResult({
           kind: 'error',
@@ -74,6 +77,9 @@ export function TraineeView() {
           <p className={styles.empty}>
             No results yet for <strong>{result.traineeId}</strong>. Check the ID and try again.
           </p>
+        )}
+        {result.kind === 'incomplete' && (
+          <p className={styles.empty}>Complete all your assessments to view your results.</p>
         )}
         {result.kind === 'error' && <Alert kind="error">{result.text}</Alert>}
         {result.kind === 'ok' && <ResultsBlock summary={result.summary} />}

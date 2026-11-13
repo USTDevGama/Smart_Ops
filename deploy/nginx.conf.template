@@ -1,5 +1,5 @@
-# Rendered by the nginx image entrypoint (envsubst). Only ${AGENT1_API_URL}, ${AGENT3_API_URL} and
-# ${AGENT4_API_URL} are substituted; nginx's own $variables are left alone.
+# Rendered by the nginx image entrypoint (envsubst). Only ${AGENT1_API_URL}, ${AGENT2_API_URL},
+# ${AGENT3_API_URL} and ${AGENT4_API_URL} are substituted; nginx's own $variables are left alone.
 server {
     listen 8080;
     server_name _;
@@ -41,6 +41,20 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_read_timeout 300s;
         client_max_body_size 25m;
+    }
+
+    # Pod 2 API (agent 2, Bias Flagging, Smart_Ops_Pod2/backend). Served same-origin like agent 3. The prefix
+    # is stripped, so /agent2-api/api/v1/flags reaches the backend as /api/v1/flags. The UI allows files up to
+    # 5 MB; the backend enforces its own, smaller limit and answers with its own error message.
+    location /agent2-api/ {
+        proxy_pass ${AGENT2_API_URL}/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 300s;
+        client_max_body_size 5m;
     }
 
     # Pod 4 API (agent 4, ASGD). Served same-origin like agent 3. The prefix is stripped, so

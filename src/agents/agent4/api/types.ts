@@ -3,10 +3,11 @@
 
 export type RunStatus = 'running' | 'pending_review' | 'failed' | 'approved' | 'rejected';
 
+// One row per trainee in the trainee database. Status and time are null until the first run.
 export type TraineeRow = {
   trainee_id: string;
-  status: RunStatus;
-  last_run_at: string;
+  status: RunStatus | null;
+  last_run_at: string | null;
 };
 
 export type ScoreRow = {
@@ -29,6 +30,8 @@ export type GapSummary = {
   outcome_match: string;
   exercises: Exercise[];
   outcomes: Outcome[];
+  // One sentence from the agent: why the exercise fits (or why none is recommended).
+  why: string;
 };
 
 export type Summary = {
@@ -44,6 +47,10 @@ export type Summary = {
   not_assessed: { goal: string; label: string }[];
   review_required: boolean;
   versions: { rules: string; mapping: string; content_library: string };
+  // Three texts the agent writes; the screen shows all three, each from the same checked data.
+  skill_gaps: string;
+  recommendations: string;
+  report: string;
 };
 
 export type ReviewBody = {
