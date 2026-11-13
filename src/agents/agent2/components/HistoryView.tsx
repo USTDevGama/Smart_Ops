@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '../api/client';
 import type { RunSummary } from '../api/types';
-import { fmtDateTime } from '../util/format';
+import { batchLabel, fmtDateTime } from '../util/format';
 import Alert from './Alert';
 import Button from './Button';
 import StatusBadge from './StatusBadge';
@@ -25,7 +25,7 @@ function HistoryCard({ run, onOpen }: { run: RunSummary; onOpen: () => void }) {
         className="flex h-full w-full flex-col rounded-md border border-line bg-surface p-4 text-left transition-colors hover:border-highlight-border hover:bg-highlight"
       >
         <div className="flex items-start justify-between gap-2">
-          <p className="truncate text-sm font-medium text-heading">{run.filename}</p>
+          <p className="truncate text-sm font-medium text-heading">{batchLabel(run.batch_id)}</p>
           <StatusBadge status={run.status} />
         </div>
         <time dateTime={run.created_at} className="mt-1 text-xs text-body">

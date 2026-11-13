@@ -32,12 +32,12 @@ Status: `merged` (copied in, lint, typecheck, unit and mock browser tests pass).
   non-admin role `user` and refuses admins on analyses. Needs a backend change before real mode works through the portal.
 - Port: agent2 proxies to 8001 by default so it can run next to the Agent 3 backend on 8000.
 - Production: nginx route `/agent2-api/` and `AGENT2_API_URL` are in the repo. The server `.env` still needs the `AGENT2_API_URL` line; see `docs/agent2-backend-integration.md`.
-- **Output contract changed on the portal side only.** The result now shows one card per detected flag, then goal scores, then the raw
-  JSON. This follows the agent's final JSON (`detected_flags` with `flag`, `confidence`, `status`, `evidence_ids`, `explanation`).
-  `api/types.ts` gained `Finding.evidence_ids`, optional `trainee_id` and `FindingStatus` value `pending_review`. `evidence` and
-  `location` became optional. The matching change in `Smart_Ops_Pod2/contracts/ui_api.openapi.yaml` and the backend response (read from
-  the `analysis_findings` table) is still to be made there. Open for the backend team: whether each finding can carry a `trainee_id`.
+- **Output contract changed on the portal side only.** The output follows the agent's final JSON: `detected_flags` entries with `flag`,
+  `confidence`, `status` (upper case), `subject` (`"R-02 <-> T-03"`: source then trainee), `evidence_ids`, `explanation`, plus `batch_id`.
+  Each card shows flag title, flag description (looked up in the flags table by name, not in the agent output), trainee and source (from
+  `subject`), and the explanation. History and the run header show `batch_id`, not the uploaded file name. The matching change in
+  `Smart_Ops_Pod2/contracts/ui_api.openapi.yaml` and the backend response (read from the `analysis_findings` table) is still to be made there.
+  Open for the backend team: `batch_id` is not in the agreed sample output; the UI needs it on the result and on the run.
 - **Removed on request:** the trainee goal scores section (`goal_scoring` is ignored if the backend sends it) and the Escalate decision.
-  Review is Accept or Reject only. `Decision` is `accept | reject`, `FindingStatus` has no `escalated`, and `summary` has no `escalated`
-  count. The backend must not return `escalated` (the card has no style for it) and should reject an `escalate` decision.
+  Review is Accept or Reject only. `Decision` is `accept | reject` and `FindingStatus` has no `escalated`. The backend must not return `escalated` (the card has no style for it) and should reject an `escalate` decision.
 - **Explanation** on each card is the agent's own `explanation` for that finding, never the flag's description.

@@ -90,21 +90,41 @@ Also note: the backend refuses admins on analyses (403 `USER_ROLE_REQUIRED`). Th
 
 ## What the UI expects back for a finished run
 
-The output screen shows one card per detected flag, then the raw JSON. The response of `GET /runs/{id}` and `GET /runs/{id}/result` (`result` object) should follow `src/agents/agent2/api/types.ts`. For each entry in `findings`:
+The output screen shows one card per detected flag, then the raw JSON. The field names are the agent's own. `result` (in `GET /runs/{id}` and `GET /runs/{id}/result`) is:
 
-| Field                  | Required | Meaning                                                                                |
-| ---------------------- | -------- | -------------------------------------------------------------------------------------- |
-| `finding_id`           | yes      | Unique id                                                                              |
-| `flag_id`, `flag_name` | yes      | The flag; names like `subtle_harsh` are shown as "Subtle harsh"                        |
-| `confidence`           | yes      | Number from 0 to 1                                                                     |
-| `evidence_ids`         | yes      | Ids of the input records behind the finding (for example `FB-019`); shown as "Sources" |
-| `explanation`          | yes      | The agent's own reason for this finding (never the flag's description)                 |
-| `status`               | yes      | `pending_review`, `auto_accepted`, `accepted` or `rejected`                            |
-| `reviewed_by_human`    | yes      | Whether a person decided                                                               |
-| `trainee_id`           | no       | The card shows a Trainee row only when this is present                                 |
-| `evidence`, `location` | no       | A quote and its JSON path, shown under the card when present                           |
+```json
+{
+  "batch_id": "B-1042",
+  "detected_flags": [
+    {
+      "flag": "clique",
+      "confidence": 0.9,
+      "status": "PENDING_REVIEW",
+      "subject": "R-02 <-> T-03",
+      "evidence_ids": ["FB-019", "FB-020"],
+      "explanation": "..."
+    }
+  ]
+}
+```
 
-Human review has two decisions only: `accept` and `reject`. The UI has no Escalate button and no `escalated` status or count, and it does not show goal scoring (`goal_scoring` in a response is ignored).
+| Field          | Required | Shown as                                                                                                     |
+| -------------- | -------- | ------------------------------------------------------------------------------------------------------------ |
+| `batch_id`     | no       | The title of each run in History and above the output. Without it the UI says "Batch ID not available yet"   |
+| `flag`         | yes      | Card title (`subtle_harsh` becomes "Subtle harsh"). Also the key for the **Description**, see below          |
+| `confidence`   | yes      | Confidence bar, a number from 0 to 1                                                                         |
+| `status`       | yes      | `PENDING_REVIEW`, `AUTO_ACCEPTED`, `ACCEPTED` or `REJECTED` (upper case)                                     |
+| `subject`      | yes      | `"<reviewer> <-> <trainee>"`. Left side is the **Source**, right side is the **Trainee**                     |
+| `evidence_ids` | yes      | Not shown on the card (only in the raw JSON)                                                                 |
+| `explanation`  | yes      | **Explanation**: the agent's own reasoning for this finding, never the flag's description. Long text is fine |
+
+**Description** is not in the agent output. The UI reads it from the flags table (`GET /flags`) by matching `flag` to the flag name, ignoring case and `_` versus `-`. A flag that is no longer in the table shows "Not available".
+
+`batch_id` is the one field the UI needs that is not in the agreed sample output. Also put it on the run (`GET /runs/{id}` and each row of `GET /runs`) so History can show it for runs that have not finished. `goal_scoring` in a response is ignored.
+
+A review item in `run.review_items` uses the same names (`flag`, `confidence`, `subject`, `evidence_ids`, `explanation`) plus `item_id` and `decision`.
+
+Human review has two decisions only: `accept` and `reject`. The UI has no Escalate button and no `escalated` status.
 
 The matching update to `Smart_Ops_Pod2/contracts/ui_api.openapi.yaml` is **not done yet**.
 

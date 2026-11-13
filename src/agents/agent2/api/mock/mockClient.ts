@@ -14,7 +14,7 @@ import {
 import { getHostUser, type HostUser } from '../../host/bridge';
 import { getSessionId, uuid } from '../../state/session';
 import { SEED_FLAGS } from './seed';
-import { materialize, planRun, type RunRecord } from './mockAgent';
+import { batchIdFor, materialize, planRun, type RunRecord } from './mockAgent';
 
 /**
  * MOCK ONLY. In-browser fake of the whole backend, persisted to localStorage so flags and run history
@@ -40,7 +40,7 @@ export interface MockOptions {
 }
 
 // v2: the flag set changed (4 flags). Bumping the key reseeds browsers that hold the old v1 data.
-const DB_KEY = 'gama.mock.db.v2';
+const DB_KEY = 'gama.mock.db.v3';
 
 function defaultStore(): KeyValueStore {
   try {
@@ -226,6 +226,7 @@ export class MockClient implements ApiClient {
       run_id,
       session_id,
       filename: req.filename,
+      batch_id: batchIdFor(run_id, req.payload),
       created_at: new Date(this.now()).toISOString(),
       started_ms: this.now(),
       plan: planRun(run_id, req.payload, enabled),
@@ -280,7 +281,7 @@ export class MockClient implements ApiClient {
         const raised = rec.plan.filter((p) => p.raised);
         return {
           run_id: run.run_id,
-          filename: run.filename,
+          batch_id: run.batch_id,
           status: run.status,
           created_at: run.created_at,
           flags_checked: run.progress.checked,
