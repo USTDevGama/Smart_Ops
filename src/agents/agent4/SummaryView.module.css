@@ -81,6 +81,38 @@
   font: 700 16px/24px var(--ust-font-display);
   color: var(--ust-ink);
 }
+.markdown {
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--ust-ink);
+}
+.markdown h2 {
+  margin: 0 0 12px;
+  font: 700 20px/28px var(--ust-font-display);
+}
+.markdown h3 {
+  margin: 20px 0 8px;
+  font: 700 16px/24px var(--ust-font-display);
+}
+.markdown p {
+  margin: 0 0 12px;
+}
+.markdown ul {
+  margin: 0 0 12px;
+  padding-left: 20px;
+}
+.markdown table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 8px 0 16px;
+  font-size: 14px;
+}
+.markdown th,
+.markdown td {
+  text-align: left;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--ust-hairline);
+}
 .report {
   margin: 0;
   white-space: pre-wrap;
