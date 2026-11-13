@@ -46,6 +46,15 @@ export function CurriculumPage() {
 
   const [curriculum, setCurriculum] = useState<Curriculum | null>(null);
   const [tracks, setTracks] = useState<Track[] | null>(null);
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+
+  function toggleExpand(key: string) {
+    setExpanded((prev: Set<string>) => {
+      const next = new Set(prev);
+      next.has(key) ? next.delete(key) : next.add(key);
+      return next;
+    });
+  }
 
   async function ingest(
     payload: { name: string; document_text: string },
@@ -176,12 +185,31 @@ export function CurriculumPage() {
                 </div>
                 {track.topics.length > 0 && (
                   <ul className="topics">
-                    {track.topics.slice(0, 4).map((t) => (
-                      <li key={t.topic_id}>{t.topic_name}</li>
-                    ))}
-                    {track.topics.length > 4 && (
-                      <li className="muted small">+ {track.topics.length - 4} more</li>
-                    )}
+                    {track.topics
+                      .slice(0, expanded.has(track.track_key) ? undefined : 4)
+                      .map((t) => (
+                        <li key={t.topic_id}>{t.topic_name}</li>
+                      ))}
+                    {track.topics.length > 4 &&
+                      (expanded.has(track.track_key) ? (
+                        <li>
+                          <button
+                            className="link small"
+                            onClick={() => toggleExpand(track.track_key)}
+                          >
+                            Show less
+                          </button>
+                        </li>
+                      ) : (
+                        <li>
+                          <button
+                            className="link small"
+                            onClick={() => toggleExpand(track.track_key)}
+                          >
+                            +{track.topics.length - 4} more
+                          </button>
+                        </li>
+                      ))}
                   </ul>
                 )}
               </div>

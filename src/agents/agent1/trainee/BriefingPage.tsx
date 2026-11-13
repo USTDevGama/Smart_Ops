@@ -29,7 +29,7 @@ export function BriefingPage() {
   }
 
   return (
-    <div className="card narrow">
+    <div className="card">
       <h2>Your interview</h2>
       {curriculum && (
         <p className="topic">

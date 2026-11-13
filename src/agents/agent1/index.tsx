@@ -3,6 +3,7 @@ import { useAuth } from '@/auth';
 import { Alert } from '@/components/ui';
 import { Agent1ApiProvider, isMockMode } from './api';
 import { ReviewPage } from './admin/ReviewPage';
+import { SessionReviewPage } from './admin/SessionReviewPage';
 import { BriefingPage } from './trainee/BriefingPage';
 import { CurriculumPage } from './trainee/CurriculumPage';
 import { InterviewPage } from './trainee/InterviewPage';
@@ -29,6 +30,7 @@ export default function Agent1() {
           {isAdmin ? (
             <>
               <Route index element={<ReviewPage />} />
+              <Route path="session/:sessionId/review" element={<SessionReviewPage />} />
               <Route path="*" element={<Navigate to="." replace />} />
             </>
           ) : (
