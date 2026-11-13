@@ -1,49 +1,39 @@
-/* Viva Agent screen theme, ported from Smart_Ops_Pod1/frontend/src/index.css.
-   Scoped to .viva so the shared shell and the other agents keep their own tokens/styles.
-   Light/dark variables are kept as this agent's own custom properties (not the shell's tokens),
-   same pattern as agent4's theme.css. */
+/* Viva Agent screen theme — UST brand palette, light only.
+   Scoped to .viva. Colors reference design tokens from src/styles/tokens.css.
+   Same pattern as agent4's theme.css. */
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=Figtree:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
 
 .viva {
-  /* Mapped to the shared design tokens from tokens.css so the palette stays in sync */
-  --viva-bg: var(--sur-400, #f5f6f7);
-  --viva-surface: var(--white, #ffffff);
-  --viva-text: var(--neu-1000, #0e1e3a);
-  --viva-muted: var(--neu-600, #6e7889);
-  --viva-border: var(--neu-200, #cfd2d8);
-  --viva-primary: var(--tea-500, #0097ac);
-  --viva-primary-hover: var(--tea-600, #00798a);
-  --viva-primary-text: var(--white, #ffffff);
-  --viva-danger: var(--error-strong, #cf2f29);
-  --viva-good: var(--success-strong, #008540);
-  --viva-warn: var(--warning-strong, #fa8500);
-  --viva-info-bg: var(--tea-50, #e6f5f7);
-  --viva-error-bg: var(--error-faint, #fcefee);
-  --viva-soft: var(--neu-50, #f3f4f5);
+  --viva-bg: var(--color-bg-page);
+  --viva-surface: var(--color-bg-surface);
+  --viva-text: var(--color-text-heading);
+  --viva-muted: var(--color-text-body);
+  --viva-border: var(--color-border-default);
+  --viva-primary: var(--color-btn-primary-bg);
+  --viva-primary-hover: var(--color-btn-primary-bg-hover);
+  --viva-primary-text: var(--color-text-on-primary);
+  --viva-danger: var(--error-strong);
+  --viva-good: var(--success-strong);
+  --viva-warn: var(--warning-strong);
+  --viva-info-bg: var(--tea-50);
+  --viva-error-bg: var(--error-faint);
+  --viva-soft: var(--sur-200);
+  --viva-accent-soft: var(--color-highlight-bg);
 
   color: var(--viva-text);
   background: var(--viva-bg);
-}
-
-@media (prefers-color-scheme: dark) {
-  .viva {
-    --viva-bg: #0f1623;
-    --viva-surface: #182133;
-    --viva-text: #e6eaf2;
-    --viva-muted: #94a3b8;
-    --viva-border: #2a3650;
-    --viva-primary: #00c2db;
-    --viva-good: #4ade80;
-    --viva-warn: #fbbf24;
-    --viva-info-bg: #0d2a30;
-    --viva-error-bg: #3a1a1a;
-    --viva-soft: #131c2e;
-  }
+  font: 400 15px/1.5 'Figtree', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
 }
 
 .viva * {
   box-sizing: border-box;
 }
 
+.viva h1,
+.viva h2,
+.viva h3 {
+  font-family: 'Archivo', 'Figtree', system-ui, sans-serif;
+}
 .viva h2 {
   margin: 0 0 8px;
   font-size: 1.3rem;
@@ -290,6 +280,10 @@
   border-color: var(--viva-primary);
   color: var(--viva-primary-text);
 }
+.viva button.primary:hover:not(:disabled) {
+  background: var(--viva-primary-hover);
+  border-color: var(--viva-primary-hover);
+}
 .viva button.danger {
   background: var(--viva-danger);
   border-color: var(--viva-danger);
@@ -473,51 +467,98 @@
   margin: 0;
 }
 
-/* Review */
-.viva .review {
+/* Review page */
+.viva .review-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.viva .sessions-header h2 {
+  color: var(--viva-primary);
+}
+
+/* Sessions table */
+.viva .sessions-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+  font-size: 0.9rem;
+}
+.viva .sessions-table th {
+  text-align: left;
+  padding: 8px 10px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--viva-muted);
+  border-bottom: 2px solid var(--viva-border);
+  font-family: 'IBM Plex Mono', ui-monospace, Consolas, monospace;
+}
+.viva .sessions-table td {
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--viva-border);
+  vertical-align: middle;
+}
+.viva .sessions-table tr:last-child td {
+  border-bottom: none;
+}
+.viva .sessions-table tr.row-active td {
+  background: var(--viva-accent-soft);
+}
+.viva .row-btn {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+}
+.viva .candidate-id {
+  color: var(--viva-primary);
+  font-weight: 700;
+  font-family: 'IBM Plex Mono', ui-monospace, Consolas, monospace;
+  text-decoration: underline;
+}
+.viva .candidate-id:hover {
+  color: var(--viva-primary-hover);
+}
+
+/* Side-by-side detail panels */
+.viva .session-panels {
   display: grid;
-  grid-template-columns: 320px 1fr;
+  grid-template-columns: minmax(300px, 38%) 1fr;
   gap: 16px;
   align-items: start;
 }
-.viva .list ul {
+
+/* Curriculum panel */
+.viva .track-list {
   list-style: none;
   padding: 0;
-  margin: 12px 0 0;
+  margin: 10px 0 0;
 }
-.viva .item {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  width: 100%;
-  text-align: left;
-  margin-bottom: 6px;
+.viva .track-list > li {
+  padding: 8px 0;
+  border-top: 1px solid var(--viva-border);
 }
-.viva .item.active {
-  border-color: var(--viva-primary);
-  background: var(--viva-info-bg);
+.viva .track-list > li:first-child {
+  border-top: none;
 }
+.viva .topic-list {
+  list-style: none;
+  padding: 0 0 0 12px;
+  margin: 6px 0 0;
+}
+.viva .topic-list li {
+  font-size: 0.85rem;
+  color: var(--viva-muted);
+  padding: 2px 0;
+}
+
 .viva .item-top {
   display: flex;
   justify-content: space-between;
   align-items: center;
-}
-.viva .curricula-list {
-  list-style: none;
-  padding: 0;
-  margin: 12px 0 20px;
-  max-height: 180px;
-  overflow-y: auto;
-}
-.viva .curricula-list li {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 6px 0;
-  border-bottom: 1px solid var(--viva-border, #e5e7eb);
-}
-.viva .curricula-list li:last-child {
-  border-bottom: none;
 }
 .viva .detail-head {
   display: flex;
@@ -570,10 +611,12 @@
   font-weight: 600;
 }
 
-@media (max-width: 820px) {
-  .viva .review {
+@media (max-width: 1050px) {
+  .viva .session-panels {
     grid-template-columns: 1fr;
   }
+}
+@media (max-width: 820px) {
   .viva .cols {
     grid-template-columns: 1fr;
   }
@@ -582,118 +625,9 @@
     gap: 4px;
   }
 }
-
-/* ── Admin review page ── */
-.viva .review-page {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.viva .sessions-table {
-  list-style: none;
-  padding: 0;
-  margin: 12px 0 0;
-  border: 1px solid var(--viva-border);
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.viva .sessions-header {
-  display: grid;
-  grid-template-columns: 130px 1fr 150px 180px 70px;
-  gap: 12px;
-  padding: 8px 14px;
-  background: var(--viva-soft);
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: var(--viva-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.viva .row-btn {
-  display: grid;
-  grid-template-columns: 130px 1fr 150px 180px 70px;
-  gap: 12px;
-  padding: 11px 14px;
-  width: 100%;
-  text-align: left;
-  border: none;
-  border-top: 1px solid var(--viva-border);
-  border-radius: 0;
-  background: var(--viva-surface);
-  color: var(--viva-text);
-  font: inherit;
-  font-weight: 400;
-  cursor: pointer;
-  transition: background 0.12s;
-}
-
-.viva .row-btn:hover {
-  background: var(--viva-info-bg);
-}
-
-.viva .row-btn.active {
-  background: var(--viva-info-bg);
-  border-left: 3px solid var(--viva-primary);
-}
-
-.viva .candidate-id {
-  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: var(--viva-primary);
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-
-/* Two-column layout: curriculum on left, HITL review on right */
-.viva .session-panels {
-  display: grid;
-  grid-template-columns: minmax(300px, 38%) 1fr;
-  gap: 16px;
-  align-items: start;
-}
-
-.viva .track-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.viva .track-list > li {
-  padding: 10px 0;
-  border-bottom: 1px solid var(--viva-border);
-}
-
-.viva .track-list > li:last-child {
-  border-bottom: none;
-}
-
-.viva .topic-list {
-  list-style: disc;
-  padding-left: 18px;
-  margin: 6px 0 0;
-  font-size: 0.85rem;
-  color: var(--viva-muted);
-}
-
-@media (max-width: 1050px) {
-  .viva .session-panels {
-    grid-template-columns: 1fr;
-  }
-}
-
 @media (max-width: 680px) {
-  .viva .sessions-header,
-  .viva .row-btn {
-    grid-template-columns: 100px 1fr 110px;
-  }
-  .viva .sessions-header > span:nth-child(4),
-  .viva .sessions-header > span:nth-child(5),
-  .viva .row-btn > span:nth-child(4),
-  .viva .row-btn > span:nth-child(5) {
+  .viva .sessions-table .col-date,
+  .viva .sessions-table .col-score {
     display: none;
   }
 }
