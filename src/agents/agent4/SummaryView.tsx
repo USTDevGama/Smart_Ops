@@ -1,11 +1,11 @@
 // The results page, following the trainee report design (trainee-report 1.html). Used by the trainee
 // screen and by the evaluator's trainee detail. Every value comes from the summary.
 
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 
 import type { RunStatus, ScoreRow, Summary } from './api';
 import {
-  exerciseTile,
+  exerciseTotals,
   formatMinutes,
   groupScoreRows,
   notAssessedNote,
@@ -32,12 +32,44 @@ const PILL_CLASS: Record<ScoreStatus, string> = {
   not_assessed: `${styles.pill} ${styles.pillNa}`,
 };
 
-function Tile({ label, value, alert = false }: { label: string; value: string; alert?: boolean }) {
+function Tile({
+  label,
+  value,
+  alert = false,
+  sub,
+}: {
+  label: string;
+  value: string;
+  alert?: boolean;
+  sub?: ReactNode;
+}) {
   return (
     <div className={alert ? `${styles.tile} ${styles.tileGap}` : styles.tile}>
       <div className={styles.tileLabel}>{label}</div>
       <div className={styles.tileValue}>{value}</div>
+      {sub}
     </div>
+  );
+}
+
+/** A small clock: the time it will take. Decorative; the words beside it say the same thing. */
+function ClockIcon() {
+  return (
+    <svg
+      className={styles.clock}
+      width="12"
+      height="12"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <circle cx="8" cy="8" r="6.5" />
+      <path d="M8 4.5V8l2.5 1.5" />
+    </svg>
   );
 }
 
@@ -163,7 +195,16 @@ export function ResultsBlock({ summary }: { summary: Summary }) {
           value={String(summary.gaps.length)}
           alert={summary.gaps.length > 0}
         />
-        <Tile label="Exercises" value={exerciseTile(summary.gaps)} />
+        <Tile
+          label="Exercises"
+          value={String(exerciseTotals(summary.gaps).count)}
+          sub={
+            <div className={styles.tileTime}>
+              <ClockIcon />
+              <span>{exerciseTotals(summary.gaps).time}</span>
+            </div>
+          }
+        />
         <Tile label="Strong areas" value={String(summary.strong.length)} />
       </div>
 

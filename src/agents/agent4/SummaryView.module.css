@@ -147,6 +147,19 @@
   font: 500 24px/30px var(--ust-font-mono);
   color: var(--ust-ink);
 }
+/* The time under the exercise count: small, with a clock beside it. */
+.tileTime {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 4px;
+  font: 500 12px/16px var(--ust-font-text);
+  color: var(--ust-ink-soft);
+}
+.clock {
+  flex: none;
+  color: var(--ust-ink-soft);
+}
 .tileGap .tileValue {
   color: var(--gap);
 }

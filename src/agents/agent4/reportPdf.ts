@@ -6,7 +6,7 @@ import { jsPDF } from 'jspdf';
 
 import type { Summary } from './api';
 import {
-  exerciseTile,
+  exerciseTotals,
   formatMinutes,
   groupScoreRows,
   notAssessedNote,
@@ -282,7 +282,7 @@ export function buildReportPdf(summary: Summary): Blob {
   const tiles: [string, string, boolean][] = [
     ['GOALS ASSESSED', `${summary.assessed_count} of ${summary.goal_count}`, false],
     ['SKILL GAPS', String(summary.gaps.length), summary.gaps.length > 0],
-    ['EXERCISES', exerciseTile(summary.gaps), false],
+    ['EXERCISES', String(exerciseTotals(summary.gaps).count), false],
     ['STRONG AREAS', String(summary.strong.length), false],
   ];
   const tileGap = 10;
@@ -295,6 +295,18 @@ export function buildReportPdf(summary: Summary): Blob {
     pdf.text(label, x + 9, doc.y + 14);
     doc.setFont(MONO, 'bold', 12, alert ? GAP : INK);
     pdf.text(value, x + 9, doc.y + 35);
+    if (i === 2) {
+      // The time, small, with a clock beside it: how long the exercises take.
+      const cx = x + 9 + doc.textWidth(value, MONO, 'bold', 12) + 12;
+      const cy = doc.y + 31;
+      pdf.setDrawColor(...INK_SOFT);
+      pdf.setLineWidth(0.8);
+      pdf.circle(cx, cy, 4, 'S');
+      pdf.line(cx, cy, cx, cy - 2.4);
+      pdf.line(cx, cy, cx + 1.8, cy + 1);
+      doc.setFont(SANS, 'normal', 8, INK_SOFT);
+      pdf.text(exerciseTotals(summary.gaps).time, cx + 7, doc.y + 34);
+    }
   });
   doc.y += 62;
 

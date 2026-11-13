@@ -140,11 +140,11 @@ export function formatMinutes(total: number): string {
   return minutes === 0 ? `${hours} h` : `${hours} h ${minutes} min`;
 }
 
-// Tile value for exercises: "2 · 1 h 40 min". Only approved exercises count.
-export function exerciseTile(gaps: GapSummary[]): string {
+// Exercises tile: how many approved exercises, and how long they take in total. Shown separately.
+export function exerciseTotals(gaps: GapSummary[]): { count: number; time: string } {
   const exercises = gaps.flatMap((gap) => gap.exercises);
   const minutes = exercises.reduce((total, exercise) => total + exercise.minutes, 0);
-  return `${exercises.length} · ${formatMinutes(minutes)}`;
+  return { count: exercises.length, time: formatMinutes(minutes) };
 }
 
 export function exerciseCount(gaps: GapSummary[]): number {
