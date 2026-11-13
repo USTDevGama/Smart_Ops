@@ -1,0 +1,582 @@
+/* Viva Agent screen theme, ported from Smart_Ops_Pod1/frontend/src/index.css.
+   Scoped to .viva so the shared shell and the other agents keep their own tokens/styles.
+   Light/dark variables are kept as this agent's own custom properties (not the shell's tokens),
+   same pattern as agent4's theme.css. */
+
+.viva {
+  --viva-bg: #f4f6f9;
+  --viva-surface: #ffffff;
+  --viva-text: #1a202c;
+  --viva-muted: #667085;
+  --viva-border: #e2e8f0;
+  --viva-primary: #2563eb;
+  --viva-primary-text: #ffffff;
+  --viva-danger: #dc2626;
+  --viva-good: #15803d;
+  --viva-warn: #b45309;
+  --viva-info-bg: #eff6ff;
+  --viva-error-bg: #fef2f2;
+  --viva-soft: #f8fafc;
+
+  color: var(--viva-text);
+  background: var(--viva-bg);
+}
+
+@media (prefers-color-scheme: dark) {
+  .viva {
+    --viva-bg: #0f1623;
+    --viva-surface: #182133;
+    --viva-text: #e6eaf2;
+    --viva-muted: #94a3b8;
+    --viva-border: #2a3650;
+    --viva-primary: #3b82f6;
+    --viva-good: #4ade80;
+    --viva-warn: #fbbf24;
+    --viva-info-bg: #14233f;
+    --viva-error-bg: #3a1a1a;
+    --viva-soft: #131c2e;
+  }
+}
+
+.viva * {
+  box-sizing: border-box;
+}
+
+.viva h2 {
+  margin: 0 0 8px;
+  font-size: 1.3rem;
+}
+.viva h3 {
+  margin: 18px 0 6px;
+  font-size: 1rem;
+}
+.viva p {
+  margin: 0 0 12px;
+}
+.viva ul {
+  margin: 0 0 12px;
+  padding-left: 20px;
+}
+.viva .muted {
+  color: var(--viva-muted);
+}
+.viva .small {
+  font-size: 0.85rem;
+}
+.viva .center {
+  text-align: center;
+}
+
+.viva .upload-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+.viva .upload-header h1 {
+  font-size: 2rem;
+  margin: 0 0 8px;
+  color: var(--viva-primary);
+}
+
+.viva .divider {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 24px 0;
+}
+.viva .divider::before,
+.viva .divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--viva-border);
+}
+.viva .divider span {
+  color: var(--viva-muted);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.viva .tracks-page {
+  max-width: 920px;
+  margin: 0 auto;
+}
+
+.viva .hero-card {
+  background: linear-gradient(135deg, var(--viva-surface), var(--viva-soft));
+  border: 1px solid var(--viva-border);
+  border-radius: 16px;
+  padding: 32px;
+  margin-bottom: 20px;
+}
+.viva .hero-card.center {
+  text-align: center;
+}
+.viva .eyebrow {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--viva-primary);
+  margin-bottom: 8px;
+}
+.viva .hero-card h1 {
+  margin: 0 0 8px;
+  font-size: 1.8rem;
+}
+.viva .hero-stats {
+  display: flex;
+  gap: 32px;
+  margin-top: 20px;
+}
+.viva .stat {
+  display: flex;
+  flex-direction: column;
+}
+.viva .stat-value {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--viva-primary);
+  line-height: 1;
+}
+.viva .stat-label {
+  font-size: 0.8rem;
+  color: var(--viva-muted);
+  margin-top: 4px;
+}
+
+.viva .tracks-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.viva .track-card {
+  background: var(--viva-surface);
+  border: 1px solid var(--viva-border);
+  border-left: 4px solid var(--accent, var(--viva-primary));
+  border-radius: 12px;
+  padding: 18px;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+.viva .track-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+.viva .track-card-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.viva .track-icon {
+  font-size: 1.6rem;
+}
+.viva .track-card-head strong {
+  display: block;
+  font-size: 1rem;
+}
+.viva .track-card .topics {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0;
+  font-size: 0.88rem;
+  color: var(--viva-muted);
+}
+.viva .track-card .topics li {
+  padding: 3px 0;
+  border-top: 1px dashed var(--viva-border);
+}
+.viva .track-card .topics li:first-child {
+  border-top: none;
+}
+
+.viva .spinner {
+  width: 32px;
+  height: 32px;
+  margin: 0 auto 14px;
+  border: 3px solid var(--viva-border);
+  border-top-color: var(--viva-primary);
+  border-radius: 50%;
+  animation: viva-spin 0.8s linear infinite;
+}
+@keyframes viva-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .viva .spinner {
+    animation: none;
+  }
+}
+
+.viva .card {
+  background: var(--viva-surface);
+  border: 1px solid var(--viva-border);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 16px;
+}
+.viva .card.narrow {
+  max-width: 680px;
+  margin-inline: auto;
+}
+
+.viva .field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.viva .field label {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.viva input[type='text'],
+.viva input[type='password'],
+.viva select,
+.viva textarea {
+  width: 100%;
+  padding: 9px 11px;
+  border: 1px solid var(--viva-border);
+  border-radius: 8px;
+  background: var(--viva-surface);
+  color: var(--viva-text);
+  font: inherit;
+}
+.viva textarea {
+  resize: vertical;
+}
+.viva input:focus-visible,
+.viva select:focus-visible,
+.viva textarea:focus-visible,
+.viva button:focus-visible {
+  outline: 2px solid var(--viva-primary);
+  outline-offset: 1px;
+}
+
+.viva .check {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.9rem;
+  margin-bottom: 14px;
+}
+.viva .check input {
+  margin-top: 4px;
+}
+
+.viva button {
+  padding: 9px 16px;
+  border: 1px solid var(--viva-border);
+  border-radius: 8px;
+  background: var(--viva-surface);
+  color: var(--viva-text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.viva button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.viva button.primary {
+  background: var(--viva-primary);
+  border-color: var(--viva-primary);
+  color: var(--viva-primary-text);
+}
+.viva button.danger {
+  background: var(--viva-danger);
+  border-color: var(--viva-danger);
+  color: #fff;
+}
+.viva button.link {
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--viva-primary);
+  font-weight: 600;
+}
+.viva button.start {
+  width: 100%;
+  margin-top: 20px;
+  padding: 13px;
+  font-size: 1.05rem;
+}
+
+.viva .row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.viva .spacer {
+  flex: 1;
+}
+
+.viva .alert {
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin-bottom: 14px;
+  font-size: 0.9rem;
+}
+.viva .alert.info {
+  background: var(--viva-info-bg);
+}
+.viva .alert.error {
+  background: var(--viva-error-bg);
+  color: var(--viva-danger);
+}
+
+.viva .badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: capitalize;
+  background: var(--viva-soft);
+  border: 1px solid var(--viva-border);
+}
+.viva .badge.good {
+  color: var(--viva-good);
+}
+.viva .badge.warn {
+  color: var(--viva-warn);
+}
+.viva .badge.bad {
+  color: var(--viva-danger);
+}
+.viva .badge.info {
+  color: var(--viva-primary);
+}
+
+/* Interview */
+.viva .interview-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+.viva .timer {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+}
+.viva .timer strong {
+  font-size: 1.4rem;
+  font-variant-numeric: tabular-nums;
+}
+.viva .timer.low strong {
+  color: var(--viva-danger);
+}
+
+.viva .log {
+  height: 340px;
+  overflow-y: auto;
+  padding: 12px;
+  margin: 12px 0;
+  background: var(--viva-soft);
+  border: 1px solid var(--viva-border);
+  border-radius: 10px;
+}
+.viva .log.tall {
+  height: 420px;
+}
+.viva .bubble {
+  max-width: 85%;
+  padding: 9px 13px;
+  border-radius: 12px;
+  margin-bottom: 10px;
+  white-space: pre-wrap;
+}
+.viva .bubble .who {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--viva-muted);
+  margin-bottom: 2px;
+}
+.viva .bubble.agent {
+  background: var(--viva-info-bg);
+}
+.viva .bubble.candidate {
+  background: var(--viva-surface);
+  border: 1px solid var(--viva-border);
+  margin-left: auto;
+}
+.viva .bubble.live {
+  opacity: 0.8;
+}
+.viva .bubble.flash {
+  outline: 3px solid var(--viva-warn);
+}
+
+.viva .status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  margin-bottom: 10px;
+  color: var(--viva-muted);
+}
+.viva .dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--viva-muted);
+}
+.viva .dot.listening {
+  background: var(--viva-good);
+  animation: viva-pulse 1s infinite;
+}
+.viva .dot.speaking {
+  background: var(--viva-primary);
+  animation: viva-pulse 1.2s infinite;
+}
+.viva .dot.sending,
+.viva .dot.loading {
+  background: var(--viva-warn);
+}
+.viva .dot.thinking {
+  background: var(--viva-primary);
+  animation: viva-pulse 1.6s infinite;
+}
+@keyframes viva-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .viva .dot {
+    animation: none !important;
+  }
+}
+
+.viva .dock {
+  margin-top: 10px;
+}
+.viva button.mic.on {
+  background: var(--viva-good);
+  border-color: var(--viva-good);
+  color: #fff;
+}
+.viva .options {
+  margin: 4px 0 0;
+}
+.viva .options .check {
+  margin: 0;
+}
+
+/* Review */
+.viva .review {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 16px;
+  align-items: start;
+}
+.viva .list ul {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0 0;
+}
+.viva .item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  text-align: left;
+  margin-bottom: 6px;
+}
+.viva .item.active {
+  border-color: var(--viva-primary);
+  background: var(--viva-info-bg);
+}
+.viva .item-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.viva .curricula-list {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0 20px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+.viva .curricula-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--viva-border, #e5e7eb);
+}
+.viva .curricula-list li:last-child {
+  border-bottom: none;
+}
+.viva .detail-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.viva .metrics {
+  display: flex;
+  gap: 28px;
+  flex-wrap: wrap;
+  margin: 8px 0 14px;
+}
+.viva .metric .value {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+.viva .bars {
+  list-style: none;
+  padding: 0;
+}
+.viva .bars li {
+  display: grid;
+  grid-template-columns: 1fr 160px 150px;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.viva .bar {
+  height: 8px;
+  background: var(--viva-border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.viva .bar i {
+  display: block;
+  height: 100%;
+  background: var(--viva-primary);
+}
+.viva .cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+.viva details {
+  border-top: 1px solid var(--viva-border);
+  padding: 10px 0;
+}
+.viva summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+@media (max-width: 820px) {
+  .viva .review {
+    grid-template-columns: 1fr;
+  }
+  .viva .cols {
+    grid-template-columns: 1fr;
+  }
+  .viva .bars li {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+}

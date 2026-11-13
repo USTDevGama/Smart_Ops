@@ -9,8 +9,9 @@ import type { AgentDefinition } from './types';
 export const AGENTS: AgentDefinition[] = [
   {
     id: 'agent1',
-    name: 'Agent 1',
-    description: 'Placeholder. Team 1 describes the agent here.',
+    name: 'Viva Agent',
+    description:
+      'Candidates submit their curriculum, then take an adaptive spoken interview. Admins review the curriculum, transcript and report, and accept or reject the agent-scored evaluation.',
     roles: ['trainee', 'admin'],
     component: lazy(() => import('./agent1')),
   },

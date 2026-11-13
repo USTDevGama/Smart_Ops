@@ -48,4 +48,5 @@ Older SHA-tagged images stay on the VM (`docker images smart-ops-dashboard`). Cl
 ## Known limits
 
 - Login is still the development login (no real authentication). Do not expose the port beyond the trusted network until Zitadel is wired in ([auth-zitadel.md](auth-zitadel.md)).
-- Only Agent 3 has a backend proxy. Add a `location` for each further agent API in `deploy/nginx.conf.template` and a matching env var (and add it to `NGINX_ENVSUBST_FILTER` in the Dockerfile).
+- Agents 1, 3 and 4 have a backend proxy (`AGENT1_API_URL`, `AGENT3_API_URL`, `AGENT4_API_URL`). Add a `location` for any further agent API in `deploy/nginx.conf.template` and a matching env var (and add it to `NGINX_ENVSUBST_FILTER` in the Dockerfile).
+- Agent 1's backend (Smart_Ops_Pod1) publishes no host port by default; its own `deploy/compose.prod.yml` must set `BACKEND_PORT` and this dashboard's `AGENT1_API_URL` must point at `http://host.docker.internal:<that port>` - the two deploys are independent and must be coordinated by hand.

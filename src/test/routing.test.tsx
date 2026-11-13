@@ -46,7 +46,7 @@ describe('login and routing', () => {
     await signIn('Trainee');
     expect(await screen.findByRole('heading', { name: 'Choose an agent' })).toBeInTheDocument();
     for (const name of [
-      'Agent 1',
+      'Viva Agent',
       'Agent 2',
       'Stakeholder Roleplay',
       'Adaptive Skill-Gap Diagnostic Agent',
@@ -58,8 +58,8 @@ describe('login and routing', () => {
   it('opens an agent from its card', async () => {
     renderAt('/login');
     await signIn('Trainee');
-    await userEvent.click(await screen.findByRole('button', { name: /Agent 1/ }));
-    expect(await screen.findByRole('heading', { name: 'Agent 1' })).toBeInTheDocument();
+    await userEvent.click(await screen.findByRole('button', { name: /Viva Agent/ }));
+    expect(await screen.findByRole('heading', { name: 'Viva Interview' })).toBeInTheDocument();
   });
 });
 
