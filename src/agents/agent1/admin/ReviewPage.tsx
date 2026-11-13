@@ -14,9 +14,9 @@ import { formatDate, percent, score } from '../lib/format';
 const FILTERS: (SessionStatus | 'all')[] = ['all', 'pending_review', 'accepted', 'rejected'];
 const REVIEWABLE: SessionStatus[] = ['pending_review', 'accepted', 'rejected'];
 
-function toLabel(value: string): string {
-  const t = value.replace(/_/g, ' ');
-  return t.charAt(0).toUpperCase() + t.slice(1);
+function toLabel(s: string) {
+  const spaced = s.replace(/_/g, ' ');
+  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
 }
 
 export function ReviewPage() {
@@ -51,13 +51,18 @@ export function ReviewPage() {
     ? (curricula?.find((c) => c.curriculum_id === selectedSession.curriculum_id) ?? null)
     : null;
 
+  function curriculumName(curriculumId: number) {
+    return (
+      curricula?.find((c) => c.curriculum_id === curriculumId)?.name ?? `Curriculum ${curriculumId}`
+    );
+  }
+
   return (
     <div className="review-page">
-      <div className="card">
+      <div className="card sessions-header">
         <div className="row">
-          <h2 className="spacer" style={{ margin: 0 }}>
-            HITL review
-          </h2>
+          <h2 style={{ margin: 0 }}>HITL Review</h2>
+          <span className="spacer" />
           <select
             value={filter}
             onChange={(e) => {
@@ -73,139 +78,117 @@ export function ReviewPage() {
           </select>
           <button onClick={refresh}>Refresh</button>
         </div>
-
         {error && <div className="alert error">{error}</div>}
         {sessions === null && <p className="muted">Loading…</p>}
-        {sessions?.length === 0 && !error && (
-          <p className="muted">No sessions with this status.</p>
-        )}
-
+        {sessions?.length === 0 && !error && <p className="muted">No sessions with this status.</p>}
         {sessions && sessions.length > 0 && (
-          <ul className="sessions-table">
-            <li className="sessions-header">
-              <span>Candidate</span>
-              <span>Curriculum</span>
-              <span>Status</span>
-              <span>Date</span>
-              <span>Score</span>
-            </li>
-            {sessions.map((s) => (
-              <li key={s.session_id}>
-                <button
-                  className={selected === s.session_id ? 'row-btn active' : 'row-btn'}
-                  onClick={() => setSelected(selected === s.session_id ? null : s.session_id)}
-                >
-                  <span className="candidate-id">{s.candidate_id.slice(0, 8)}</span>
-                  <span>
-                    {curricula?.find((c) => c.curriculum_id === s.curriculum_id)?.name ??
-                      `Curriculum ${s.curriculum_id}`}
-                  </span>
-                  <span>
+          <table className="sessions-table">
+            <thead>
+              <tr>
+                <th>Candidate ID</th>
+                <th>Curriculum</th>
+                <th className="col-date">Date</th>
+                <th className="col-score">Score</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sessions.map((s) => (
+                <tr key={s.session_id} className={selected === s.session_id ? 'row-active' : ''}>
+                  <td>
+                    <button
+                      className="row-btn candidate-id"
+                      onClick={() => setSelected(s.session_id === selected ? null : s.session_id)}
+                    >
+                      {s.candidate_id.slice(0, 8)}
+                    </button>
+                  </td>
+                  <td>{curriculumName(s.curriculum_id)}</td>
+                  <td className="col-date muted small">{formatDate(s.started_at)}</td>
+                  <td className="col-score muted small">
+                    {s.overall_score != null ? score(s.overall_score) : '—'}
+                  </td>
+                  <td>
                     <StatusBadge status={s.status} />
-                  </span>
-                  <span className="muted small">{formatDate(s.started_at)}</span>
-                  <span className="muted small">{score(s.overall_score)}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         )}
       </div>
 
       {selected && selectedSession ? (
         <div className="session-panels">
-          <div className="card panel-curriculum">
-            <CurriculumPanel
-              curriculum={selectedCurriculum}
-              curriculumId={selectedSession.curriculum_id}
-            />
-          </div>
-          <div className="panel-review">
+          <CurriculumPanel curriculum={selectedCurriculum} />
+          <div>
             <SessionDetail
               key={selected}
               id={selected}
-              curriculumName={selectedCurriculum?.name ?? null}
+              curriculumName={curriculumName(selectedSession.curriculum_id)}
               onReviewed={refresh}
             />
           </div>
         </div>
       ) : (
-        <div className="card center muted" style={{ padding: '32px' }}>
-          Select a candidate to review their curriculum and interview report.
+        <div className="card center muted">
+          Select a candidate ID to review its curriculum, transcript and report.
         </div>
       )}
     </div>
   );
 }
 
-function CurriculumPanel({
-  curriculum,
-  curriculumId,
-}: {
-  curriculum: AdminCurriculumItem | null;
-  curriculumId: number;
-}) {
+function CurriculumPanel({ curriculum }: { curriculum: AdminCurriculumItem | null }) {
   const api = useAgent1Api();
   const [tracks, setTracks] = useState<Track[] | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [trackError, setTrackError] = useState('');
+  const curriculumId = curriculum?.curriculum_id;
 
   useEffect(() => {
-    setLoading(true);
+    if (curriculumId == null) return;
+    setTracks(null);
+    setTrackError('');
     api
       .getTracks(curriculumId)
       .then(setTracks)
-      .catch(() => setTracks([]))
-      .finally(() => setLoading(false));
+      .catch((e: Error) => {
+        setTrackError(e.message);
+      });
   }, [api, curriculumId]);
 
-  return (
-    <>
-      <h2>Curriculum</h2>
-      {curriculum ? (
-        <div className="metrics">
-          <Metric label="Name" value={curriculum.name} />
-          <Metric label="Status" value={toLabel(curriculum.status)} />
-          <Metric label="Submitted" value={formatDate(curriculum.ingested_at)} />
-          <Metric
-            label="Sessions"
-            value={`${curriculum.sessions.length} session${curriculum.sessions.length === 1 ? '' : 's'}`}
-          />
-        </div>
-      ) : (
-        <p className="muted small">Curriculum {curriculumId}</p>
-      )}
+  if (!curriculum) return <div className="card muted center">No curriculum linked.</div>;
 
-      <h3>Tracks</h3>
-      {loading && <p className="muted small">Loading tracks…</p>}
-      {!loading && (!tracks || tracks.length === 0) && (
-        <p className="muted small">No tracks found.</p>
-      )}
+  return (
+    <div className="card">
+      <h2>Curriculum</h2>
+      <p>
+        <strong>{curriculum.name}</strong>
+      </p>
+      <p className="muted small">
+        Status: {toLabel(curriculum.status)} · Submitted {formatDate(curriculum.ingested_at)} ·{' '}
+        {curriculum.sessions.length} session{curriculum.sessions.length === 1 ? '' : 's'}
+      </p>
+      {tracks === null && !trackError && <p className="muted">Loading tracks…</p>}
+      {trackError && <div className="alert error">{trackError}</div>}
+      {tracks && tracks.length === 0 && <p className="muted small">No tracks defined yet.</p>}
       {tracks && tracks.length > 0 && (
         <ul className="track-list">
           {tracks.map((t) => (
             <li key={t.track_key}>
-              <div>
-                <strong>{t.track_name}</strong>
-                <span className="muted small">
-                  {' '}
-                  · {t.topics.length} topic{t.topics.length === 1 ? '' : 's'}
-                </span>
-              </div>
+              <strong>{t.track_name}</strong>
               {t.topics.length > 0 && (
                 <ul className="topic-list">
-                  {t.topics.slice(0, 5).map((tp) => (
+                  {t.topics.map((tp) => (
                     <li key={tp.topic_id}>{tp.topic_name}</li>
                   ))}
-                  {t.topics.length > 5 && (
-                    <li className="muted small">+{t.topics.length - 5} more</li>
-                  )}
                 </ul>
               )}
             </li>
           ))}
         </ul>
       )}
-    </>
+    </div>
   );
 }
 
@@ -269,7 +252,9 @@ function SessionDetail({
   const strengths = topics
     .flatMap((t) => t.solid.map((text) => ({ topic: t.topic, text })))
     .slice(0, 6);
-  const gaps = topics.flatMap((t) => t.shaky.map((text) => ({ topic: t.topic, text }))).slice(0, 6);
+  const gaps = topics
+    .flatMap((t) => t.shaky.map((text) => ({ topic: t.topic, text })))
+    .slice(0, 6);
 
   async function downloadJson() {
     setDownloading(true);
@@ -412,7 +397,7 @@ function SessionDetail({
                   <span className="badge info"> Declined to answer</span>
                 )}
               </span>
-              {t.text || <em>(No response)</em>}
+              {t.text || <em>(no response)</em>}
             </div>
           ))}
         </div>
@@ -527,7 +512,7 @@ function DecisionForm({
     <div className="card">
       <h2>Review decision</h2>
       <p className="muted small">
-        You are accepting or rejecting the agent's evaluation, not deciding on the candidate.
+        You are accepting or rejecting the agent&apos;s evaluation, not deciding on the candidate.
       </p>
       {review && (
         <div className="alert info">
@@ -582,9 +567,7 @@ function DecisionForm({
           </button>
         </>
       ) : (
-        <p className="muted">
-          This session is {toLabel(status)}, so it cannot be reviewed yet.
-        </p>
+        <p className="muted">This session is {toLabel(status)}, so it cannot be reviewed yet.</p>
       )}
     </div>
   );
