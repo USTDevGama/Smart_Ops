@@ -38,7 +38,7 @@ export function HomePage() {
               <span className={styles.num} aria-hidden="true">
                 {String(i + 1).padStart(2, '0')}
               </span>
-              <h2 className={`${styles.name} ${i >= 2 ? styles.alignRow : ''}`}>{a.name}</h2>
+              <h2 className={styles.name}>{a.name}</h2>
               <p className={styles.description}>{a.description}</p>
               {a.note && (
                 <div className={styles.note}>

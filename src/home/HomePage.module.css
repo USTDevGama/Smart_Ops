@@ -24,13 +24,15 @@
 .grid {
   list-style: none;
   margin: 0;
-  padding: 0 0 24px;
+  padding: 0;
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  column-gap: 24px;
+  row-gap: 0;
 }
 .item {
   min-width: 0;
+  margin-bottom: 24px;
   display: flex;
 }
 .card {
@@ -73,7 +75,7 @@
   color: var(--portal-ink);
 }
 .note {
-  padding-top: 16px;
+  padding-top: 20px;
   border-top: 1px solid var(--portal-line);
 }
 .noteLabel {
@@ -105,19 +107,33 @@
   transform: translateX(4px);
 }
 
-/* Two columns on tablets, one row of four on desktop so the page fits one screen. */
-@media (min-width: 640px) {
-  .grid {
-    grid-template-columns: repeat(2, 1fr);
+/* Cards in the same row share five row tracks, so the number, title, description,
+   divider and "Open agent" start at the same height in every card. Spacing between
+   rows is padding on the row elements, not gap, so it is identical in every card.
+   Older browsers keep the flex layout above. */
+@supports (grid-template-rows: subgrid) {
+  .item {
+    display: grid;
+    grid-template-rows: subgrid;
+    grid-row: span 5;
   }
-}
-@media (min-width: 640px) and (max-width: 1099px) {
-  .alignRow {
-    min-height: 53px;
+  .card {
+    grid-row: 1 / span 5;
+    display: grid;
+    grid-template-rows: subgrid;
+    row-gap: 0;
+    gap: 0;
   }
-}
-@media (min-width: 1100px) {
-  .grid {
-    grid-template-columns: repeat(4, 1fr);
+  .num,
+  .name,
+  .description {
+    padding-bottom: 16px;
+  }
+  .note {
+    padding-bottom: 20px;
+  }
+  .open {
+    margin-top: 0;
+    grid-row: 5;
   }
 }

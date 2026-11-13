@@ -19,9 +19,7 @@
   justify-content: space-between;
   gap: var(--space-3);
   height: 64px;
-  max-width: 1312px;
-  margin: 0 auto;
-  padding: 0 clamp(20px, 4.5vw, 64px);
+  padding: 0 clamp(16px, 2.5vw, 40px);
 }
 .brand {
   display: flex;
@@ -50,6 +48,7 @@
   white-space: nowrap;
 }
 .account {
+  margin-left: auto;
   display: flex;
   align-items: center;
   gap: var(--space-3);
@@ -123,6 +122,6 @@
 }
 /* Home page: wider column, same side padding as the top bar. */
 .mainHome {
-  max-width: 1312px;
-  padding: 0 clamp(20px, 4.5vw, 64px);
+  max-width: none;
+  padding: 0 clamp(16px, 2.5vw, 40px);
 }
