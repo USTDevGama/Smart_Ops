@@ -43,6 +43,32 @@ export function sortScoreRows(rows: ScoreRow[]): ScoreRow[] {
   });
 }
 
+// The signal behind a score, from its source references ("A_scores.G04=2" means the interview).
+// Order is fixed: interview, peer feedback, roleplay.
+export const SIGNAL_LABEL: Record<'A' | 'B' | 'C', string> = {
+  A: 'Interview',
+  B: 'Peer feedback',
+  C: 'Roleplay',
+};
+export type Signal = { code: 'A' | 'B' | 'C'; label: string };
+
+const SOURCE_SIGNAL: Record<string, 'A' | 'B' | 'C'> = {
+  A_scores: 'A',
+  B_themes: 'B',
+  C_scores: 'C',
+};
+
+export function signalsFor(sources: string[]): Signal[] {
+  const found = new Set<'A' | 'B' | 'C'>();
+  for (const source of sources) {
+    const code = SOURCE_SIGNAL[source.split('.')[0]];
+    if (code) found.add(code);
+  }
+  return (['A', 'B', 'C'] as const)
+    .filter((code) => found.has(code))
+    .map((code) => ({ code, label: SIGNAL_LABEL[code] }));
+}
+
 // The three groups in the scores list, in the order the design shows them.
 export type ScoreGroup = { status: ScoreStatus; title: string; rows: ScoreRow[] };
 
@@ -140,11 +166,11 @@ export function formatMinutes(total: number): string {
   return minutes === 0 ? `${hours} h` : `${hours} h ${minutes} min`;
 }
 
-// Tile value for exercises: "2 · 1 h 40 min". Only approved exercises count.
-export function exerciseTile(gaps: GapSummary[]): string {
+// Exercises tile: how many approved exercises, and how long they take in total. Shown separately.
+export function exerciseTotals(gaps: GapSummary[]): { count: number; time: string } {
   const exercises = gaps.flatMap((gap) => gap.exercises);
   const minutes = exercises.reduce((total, exercise) => total + exercise.minutes, 0);
-  return `${exercises.length} · ${formatMinutes(minutes)}`;
+  return { count: exercises.length, time: formatMinutes(minutes) };
 }
 
 export function exerciseCount(gaps: GapSummary[]): number {

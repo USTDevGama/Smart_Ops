@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import type { Summary } from './api';
 import { buildReportPdf } from './reportPdf';
 import {
-  exerciseTile,
+  exerciseTotals,
   formatMinutes,
   groupScoreRows,
   notAssessedNote,
@@ -15,6 +15,7 @@ import {
   recommendationCards,
   reportFileName,
   scoreStatus,
+  signalsFor,
   sortScoreRows,
   summaryErrorText,
 } from './reportView';
@@ -248,14 +249,14 @@ describe('tiles and counts from the API', () => {
   it('shows the SYN-02 counts', () => {
     expect(`${T02.assessed_count} of ${T02.goal_count}`).toBe('11 of 12');
     expect(T02.gaps.length).toBe(1);
-    expect(exerciseTile(T02.gaps)).toBe('1 · 40 min');
+    expect(exerciseTotals(T02.gaps)).toEqual({ count: 1, time: '40 min' });
     expect(T02.strong.length).toBe(5);
   });
 
   it('shows the SYN-01 counts', () => {
     expect(`${T01.assessed_count} of ${T01.goal_count}`).toBe('10 of 12');
     expect(T01.gaps.length).toBe(2);
-    expect(exerciseTile(T01.gaps)).toBe('2 · 1 h 40 min');
+    expect(exerciseTotals(T01.gaps)).toEqual({ count: 2, time: '1 h 40 min' });
     expect(T01.strong.length).toBe(5);
     expect(T01.not_assessed.length).toBe(2);
   });
@@ -273,7 +274,10 @@ describe('plain-text fields', () => {
     const cards = recommendationCards([{ ...T02.gaps[0], exercises: [] }]);
     expect(cards).toHaveLength(1);
     expect(cards[0].minutes).toBeNull();
-    expect(exerciseTile([{ ...T02.gaps[0], exercises: [] }])).toBe('0 · 0 min');
+    expect(exerciseTotals([{ ...T02.gaps[0], exercises: [] }])).toEqual({
+      count: 0,
+      time: '0 min',
+    });
   });
 });
 
@@ -352,5 +356,29 @@ describe('minutes and card text', () => {
     expect(outcomeLine(T01.gaps[0].outcomes[0])).toBe(
       'Security, compliance and intellectual-property protection.',
     );
+  });
+});
+
+describe('signals', () => {
+  it('names the signal behind each score from its source', () => {
+    expect(signalsFor(['A_scores.G04=2']).map((s) => s.label)).toEqual(['Interview']);
+    expect(signalsFor(['C_scores.G08=2']).map((s) => s.label)).toEqual(['Roleplay']);
+    expect(signalsFor(['B_themes.G11=5']).map((s) => s.label)).toEqual(['Peer feedback']);
+  });
+
+  it('lists several signals in interview, peer feedback, roleplay order', () => {
+    expect(signalsFor(['C_scores.G06=3', 'B_themes.G06=4']).map((s) => s.label)).toEqual([
+      'Peer feedback',
+      'Roleplay',
+    ]);
+    expect(signalsFor(['A_scores.G10=2', 'C_scores.G10=3']).map((s) => s.label)).toEqual([
+      'Interview',
+      'Roleplay',
+    ]);
+  });
+
+  it('ignores a source it does not know', () => {
+    expect(signalsFor(['X_other.G01=3'])).toEqual([]);
+    expect(signalsFor([])).toEqual([]);
   });
 });

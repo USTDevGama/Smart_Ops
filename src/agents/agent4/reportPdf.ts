@@ -6,8 +6,10 @@ import { jsPDF } from 'jspdf';
 
 import type { Summary } from './api';
 import {
-  exerciseTile,
+  exerciseTotals,
   formatMinutes,
+  SIGNAL_LABEL,
+  signalsFor,
   groupScoreRows,
   notAssessedNote,
   outcomeLine,
@@ -39,6 +41,11 @@ const GAP_SOFT: Rgb = [251, 233, 231];
 const NOTICE_BG: Rgb = [253, 246, 227];
 const NOTICE_LINE: Rgb = [181, 137, 0];
 const WHITE: Rgb = [255, 255, 255];
+const SIGNAL_STYLE: Record<'A' | 'B' | 'C', { fg: Rgb; line: Rgb; bg: Rgb }> = {
+  A: { fg: [0, 103, 122], line: [0, 103, 122], bg: [227, 241, 244] },
+  B: { fg: [122, 90, 0], line: [181, 137, 0], bg: [253, 246, 227] },
+  C: { fg: [91, 58, 122], line: [125, 91, 166], bg: [241, 235, 248] },
+};
 
 const SANS = 'helvetica';
 const MONO = 'courier';
@@ -132,6 +139,17 @@ class Doc {
 
 // ---- Scores by goal (left column) ----
 
+// A small bordered tag for one signal. Returns its width.
+function drawSignalChip(doc: Doc, code: 'A' | 'B' | 'C', x: number, top: number): number {
+  const style = SIGNAL_STYLE[code];
+  const label = SIGNAL_LABEL[code];
+  const w = doc.textWidth(label, SANS, 'bold', 6.5) + 10;
+  doc.rect(x, top, w, 12, style.bg, style.line);
+  doc.setFont(SANS, 'bold', 6.5, style.fg);
+  doc.pdf.text(label, x + 5, top + 8.3);
+  return w;
+}
+
 function scoreBlock(
   doc: Doc,
   x: number,
@@ -146,6 +164,15 @@ function scoreBlock(
   const numRight = trackX + TRACK_W + GAP_COL + NUM_W;
   let y = top;
 
+  // Legend: the three signals, above the list.
+  if (draw) {
+    let lx = x;
+    for (const code of ['A', 'B', 'C'] as const) {
+      lx += drawSignalChip(doc, code, lx, y) + 4;
+    }
+  }
+  y += 22;
+
   for (const group of groupScoreRows(summary.scores, threshold)) {
     if (draw) {
       doc.setFont(SANS, 'bold', 7, INK_SOFT);
@@ -157,12 +184,19 @@ function scoreBlock(
       const state: ScoreStatus = scoreStatus(row.score, threshold);
       const isGap = state === 'gap';
       const lines = doc.wrap(`${row.goal} ${row.label}`, 8.5, nameW, isGap ? 'bold' : 'normal');
-      const h = Math.max(lines.length * 11, 16) + 8;
+      const signals = signalsFor(row.sources);
+      const signalH = signals.length ? 16 : 0;
+      const h = Math.max(lines.length * 11, 16) + 8 + signalH;
 
       if (draw) {
         if (isGap) doc.rect(x - 9, y + 1, 3, h - 2, GAP, undefined);
         doc.setFont(SANS, isGap ? 'bold' : 'normal', 8.5, isGap ? GAP : INK);
         lines.forEach((line, i) => doc.pdf.text(line, x, y + 10 + i * 11));
+        // Signal tags under the goal name: where the score came from.
+        let sx = x;
+        for (const signal of signals) {
+          sx += drawSignalChip(doc, signal.code, sx, y + 10 + lines.length * 11 + 1) + 4;
+        }
 
         const barY = y + h / 2 - 4;
         if (row.score === null) {
@@ -282,7 +316,7 @@ export function buildReportPdf(summary: Summary): Blob {
   const tiles: [string, string, boolean][] = [
     ['GOALS ASSESSED', `${summary.assessed_count} of ${summary.goal_count}`, false],
     ['SKILL GAPS', String(summary.gaps.length), summary.gaps.length > 0],
-    ['EXERCISES', exerciseTile(summary.gaps), false],
+    ['EXERCISES', String(exerciseTotals(summary.gaps).count), false],
     ['STRONG AREAS', String(summary.strong.length), false],
   ];
   const tileGap = 10;
@@ -295,6 +329,18 @@ export function buildReportPdf(summary: Summary): Blob {
     pdf.text(label, x + 9, doc.y + 14);
     doc.setFont(MONO, 'bold', 12, alert ? GAP : INK);
     pdf.text(value, x + 9, doc.y + 35);
+    if (i === 2) {
+      // The time, small, with a clock beside it: how long the exercises take.
+      const cx = x + 9 + doc.textWidth(value, MONO, 'bold', 12) + 12;
+      const cy = doc.y + 31;
+      pdf.setDrawColor(...INK_SOFT);
+      pdf.setLineWidth(0.8);
+      pdf.circle(cx, cy, 4, 'S');
+      pdf.line(cx, cy, cx, cy - 2.4);
+      pdf.line(cx, cy, cx + 1.8, cy + 1);
+      doc.setFont(SANS, 'normal', 8, INK_SOFT);
+      pdf.text(exerciseTotals(summary.gaps).time, cx + 7, doc.y + 34);
+    }
   });
   doc.y += 62;
 
