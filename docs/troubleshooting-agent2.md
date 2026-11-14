@@ -2,17 +2,21 @@
 
 Use this when the Bias Flagging screens show errors after the backend was connected, or you cannot see the logs to find out why.
 
-## 1. Run the diagnosis script (start here)
+## 1. Quick checks (start here)
 
-On the VM, from the repo checkout (or copy the file there):
+On the VM, run these in order. The first one that looks wrong is usually the cause.
 
 ```bash
-bash deploy/diagnose-agent2.sh                          # finds the Pod 2 backend container by its published port
-bash deploy/diagnose-agent2.sh -b <backend-container>   # or name it yourself
-bash deploy/diagnose-agent2.sh -n 500                   # more log lines
+docker ps --format '{{.Names}}  {{.Image}}  {{.Status}}  {{.Ports}}'   # is the dashboard up? which containers publish 8085?
+docker exec smart-ops-dashboard printenv AGENT2_API_URL                  # what nginx was started with (127.0.0.1:9 = not set)
+docker exec smart-ops-dashboard grep -n agent2-api /etc/nginx/conf.d/default.conf   # is the route in the running image?
+docker exec smart-ops-dashboard wget -S -q -O /dev/null -T 5 "$(docker exec smart-ops-dashboard printenv AGENT2_API_URL)/health"   # can the container reach the backend?
+curl -i http://127.0.0.1:8086/agent2-api/health                          # through the dashboard (use your DASHBOARD_PORT)
+curl -i http://127.0.0.1:8086/agent2-api/api/v1/flags                    # 401 = reached the backend, sign-in refused
+docker logs --tail 200 --timestamps smart-ops-dashboard | grep -E "agent2-api|error|upstream"
 ```
 
-It only reads: container state, the environment nginx got, the running nginx config, three test requests through the dashboard, a connection test from inside the dashboard container, and the recent logs of the dashboard and the backend. It ends with a SUMMARY of problems and saves everything to `agent2-diagnose-<time>.log` in the current folder (git-ignored). **Send that file** to whoever helps you.
+Section 3 explains each result. A one-command script version of these checks is **not in the repo**: the company web filter blocks pushing `.sh` files, so it needs IT approval first.
 
 No checkout on the VM? `docker inspect smart-ops-dashboard --format '{{index .Config.Labels "com.docker.compose.project.working_dir"}}'` shows the folder the stack was deployed from.
 
@@ -20,12 +24,12 @@ No checkout on the VM? `docker inspect smart-ops-dashboard --format '{{index .Co
 
 | What you see                                         | Cause and fix                                                                                                                                                                                   |
 | ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `permission denied ... /var/run/docker.sock`         | Your user is not in the `docker` group. Use `sudo docker logs ...`, or ask an admin: `sudo usermod -aG docker <you>` and log in again. The script tries `sudo` for you.                         |
+| `permission denied ... /var/run/docker.sock`         | Your user is not in the `docker` group. Use `sudo docker logs ...`, or ask an admin: `sudo usermod -aG docker <you>` and log in again.                                                          |
 | `No such container: ...`                             | Wrong name. `docker ps --format '{{.Names}}  {{.Image}}  {{.Ports}}'` lists them. The dashboard is `smart-ops-dashboard`.                                                                       |
 | `docker logs` prints nothing                         | The container was just recreated (logs of the old one are gone), or nothing has been requested yet. Make a request, then look again. nginx does not log `/healthz`.                             |
 | `configured logging driver does not support reading` | The container uses a log driver other than `json-file`, `local` or `journald`. Read the logs where that driver sends them. The dashboard itself uses `json-file` (10 MB x 3 files).             |
-| The backend's logs are not in the dashboard stack    | The backend is another team's container, in another compose project. `docker logs <its-name>` works for anyone with Docker access. If you have none, ask its owner to run the script with `-b`. |
-| You have no Docker access at all                     | Ask someone who does to run the script and send you the `.log` file. Nothing else here needs access.                                                                                            |
+| The backend's logs are not in the dashboard stack    | The backend is another team's container, in another compose project. `docker logs <its-name>` works for anyone with Docker access. If you have none, ask its owner to run `docker logs` for it. |
+| You have no Docker access at all                     | Ask someone who does to run the checks in section 1 and send you the output. Nothing else here needs access.                                                                                    |
 
 By hand, once you have access:
 
@@ -42,7 +46,7 @@ docker exec smart-ops-dashboard grep -n -A8 agent2-api /etc/nginx/conf.d/default
 | Line contains                                                                       | Meaning and fix                                                                                                                                                                                      |
 | ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `connect() failed (111: Connection refused) ... upstream: "http://127.0.0.1:9/..."` | `AGENT2_API_URL` is the placeholder. Add the line to the server `.env` and recreate the container (see below).                                                                                       |
-| `connect() failed (111: Connection refused) ... upstream: "http://<ip>:<port>/..."` | Nothing listens there. The backend is down, or it is published on a different host port. Check section 7 of the script output.                                                                       |
+| `connect() failed (111: Connection refused) ... upstream: "http://<ip>:<port>/..."` | Nothing listens there. The backend is down, or it is published on a different host port. Check which container publishes that port (`docker ps`).                                                    |
 | `upstream timed out (110)`                                                          | The address is reachable on paper but nothing answers: a firewall, a wrong IP, or a hung backend.                                                                                                    |
 | `host not found in upstream "<name>"` **at start-up**                               | `AGENT2_API_URL` uses a container name nginx cannot resolve (not on the `shared-services` network). **This stops the whole dashboard container from starting.** Use `http://<VM-ip>:<port>` instead. |
 | `"GET /agent2-api/api/v1/flags HTTP/1.1" 401`                                       | The request reached the backend, which refused the sign-in. The connection is fine; the backend must accept the dashboard's headers (see `docs/agent2-api-for-backend.md`).                          |
@@ -60,7 +64,7 @@ nano /data/apps/smart-ops-dashboard/.env      # AGENT2_API_URL=http://10.100.242
 cd "$(docker inspect smart-ops-dashboard --format '{{index .Config.Labels "com.docker.compose.project.working_dir"}}')"
 TAG=$(docker inspect smart-ops-dashboard --format '{{.Config.Image}}' | cut -d: -f2)
 IMAGE_TAG=$TAG docker compose -f deploy/compose.prod.yml --env-file /data/apps/smart-ops-dashboard/.env up -d --force-recreate --wait
-bash deploy/diagnose-agent2.sh
+docker exec smart-ops-dashboard printenv AGENT2_API_URL   # then repeat the checks in section 1
 ```
 
 The production image builds with `VITE_USE_MOCKS=false` (a Dockerfile line), so Agent 2 is live. If the page shows the mock banner, the image was built with `true` and changing `.env` has no visible effect.
@@ -82,4 +86,4 @@ More on the connection and the API: [agent2-backend-integration.md](agent2-backe
 
 ## Not verified
 
-The script and these steps were written without access to the VM. The script was run against a stand-in `docker` command and a fake dashboard that returns 502, so its checks and parsing work, but it has not run against the real containers. The nginx log lines are the standard nginx messages; the exact wording can differ slightly by version.
+These steps were written without access to the VM and have not been run on the real containers. The nginx log lines are the standard nginx messages; the exact wording can differ slightly by version.

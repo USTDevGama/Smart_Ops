@@ -4,7 +4,7 @@ For the Pod 2 team members who connect the `Smart_Ops_Pod2` backend to the commo
 
 - Live dashboard: <http://10.100.242.180:8086/>
 - UI code: `src/agents/agent2/` (this repo). Backend: `Smart_Ops_Pod2/backend` (separate repo).
-- Something is not working or you cannot see logs: [troubleshooting-agent2.md](troubleshooting-agent2.md) and `bash deploy/diagnose-agent2.sh`.
+- Something is not working or you cannot see logs: [troubleshooting-agent2.md](troubleshooting-agent2.md) (quick checks to run on the VM).
 - Backend engineer: the API the UI needs is in [agent2-api-for-backend.md](agent2-api-for-backend.md).
 - Same pattern as Agent 3 and Agent 4: the browser calls a same-origin path, nginx forwards it to the backend. See [deployment.md](deployment.md).
 
