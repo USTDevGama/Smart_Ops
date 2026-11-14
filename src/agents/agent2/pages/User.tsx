@@ -6,19 +6,21 @@ import Button from '../components/Button';
 import type { FlagDescriptions } from '../components/FlagFacts';
 import HistoryView from '../components/HistoryView';
 import JsonUploader, { type UploadedFile } from '../components/JsonUploader';
+import RunError from '../components/RunError';
 import RunPanel from '../components/RunPanel';
-import { useToast } from '../components/Toast';
+import { toRunFailure, type RunFailure } from '../util/apiError';
 
 type Tab = 'new' | 'history';
 
 export default function User() {
-  const toast = useToast();
   const [tab, setTab] = useState<Tab>('new');
 
   // fresh-run state (kept when switching tabs)
   const [file, setFile] = useState<UploadedFile | null>(null);
   const [activeRunId, setActiveRunId] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
+  // Why the last run could not start. Stays next to the form until the input changes or the person tries again.
+  const [failure, setFailure] = useState<RunFailure | null>(null);
   const active = useRun(activeRunId);
 
   // run opened from History (full width)
@@ -45,11 +47,12 @@ export default function User() {
   async function run() {
     if (!file) return;
     setStarting(true);
+    setFailure(null);
     try {
       const { run_id } = await api.startRun({ filename: file.name, payload: file.payload });
       setActiveRunId(run_id);
     } catch (e) {
-      toast((e as Error).message, 'error');
+      setFailure(toRunFailure(e));
     } finally {
       setStarting(false);
     }
@@ -91,12 +94,22 @@ export default function User() {
           >
             <h2>Input</h2>
             <p className="mb-4 text-sm text-body">
-              Text is split into one record per paragraph; JSON files are checked as given.
+              Plain text becomes one record per paragraph. Text has no reviewer, trainee or rating,
+              so each record gets placeholders: reviewer “Unknown reviewer”, a generated id and
+              trainee, and rating 3. JSON files are checked as supplied, with no placeholders added.
             </p>
-            <JsonUploader value={file} onChange={setFile} disabled={busy} />
+            <JsonUploader
+              value={file}
+              onChange={(f) => {
+                setFile(f);
+                setFailure(null);
+              }}
+              disabled={busy}
+            />
             <Button className="mt-4 w-full" disabled={!file || busy} onClick={run}>
               {busy ? 'Running…' : 'Run agent'}
             </Button>
+            {failure && <RunError failure={failure} className="mt-4" />}
           </section>
 
           <section

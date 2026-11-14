@@ -14,7 +14,7 @@ import {
 import { getHostUser, type HostUser } from '../../host/bridge';
 import { getSessionId, uuid } from '../../state/session';
 import { SEED_FLAGS } from './seed';
-import { batchIdFor, materialize, planRun, type RunRecord } from './mockAgent';
+import { batchIdFor, checkInput, materialize, planRun, type RunRecord } from './mockAgent';
 
 /**
  * MOCK ONLY. In-browser fake of the whole backend, persisted to localStorage so flags and run history
@@ -219,6 +219,14 @@ export class MockClient implements ApiClient {
         409,
         'no_enabled_flags',
         'No enabled flags to check. Ask an admin to enable some.',
+      );
+    const problems = checkInput(req.payload);
+    if (problems.length)
+      throw new ApiError(
+        400,
+        'validation_error',
+        `The input is not valid: ${problems.length} ${problems.length === 1 ? 'problem' : 'problems'} found. Fix them and run again.`,
+        problems,
       );
     const run_id = uuid();
     const session_id = getSessionId();

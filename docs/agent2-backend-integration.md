@@ -4,6 +4,7 @@ For the Pod 2 team members who connect the `Smart_Ops_Pod2` backend to the commo
 
 - Live dashboard: <http://10.100.242.180:8086/>
 - UI code: `src/agents/agent2/` (this repo). Backend: `Smart_Ops_Pod2/backend` (separate repo).
+- Something is not working or you cannot see logs: [troubleshooting-agent2.md](troubleshooting-agent2.md) and `bash deploy/diagnose-agent2.sh`.
 - Backend engineer: the API the UI needs is in [agent2-api-for-backend.md](agent2-api-for-backend.md).
 - Same pattern as Agent 3 and Agent 4: the browser calls a same-origin path, nginx forwards it to the backend. See [deployment.md](deployment.md).
 
@@ -74,17 +75,17 @@ Until `AGENT2_API_URL` is set on the server, the Agent 2 screens show an error b
 
 The UI and the backend do not agree on who the user is yet. This is a **backend task**; the UI needs no change.
 
-| Dashboard sends (dev login)                          | Pod 2 backend expects                                                |
-| ---------------------------------------------------- | -------------------------------------------------------------------- |
-| `X-Dev-User` and `X-Dev-Role: trainee` or `admin`    | `Authorization: Bearer <JWT>` from its own `POST /api/v1/auth/login` |
-| Role `trainee` (the UI maps it to `user`) or `admin` | Role read from its **database**, `user` or `admin`                   |
-| Zitadel bearer token later                           | Does not accept it                                                   |
+| Dashboard sends (dev login)                                                       | Pod 2 backend expects                                                |
+| --------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| `X-Dev-User` and `X-Dev-Role: user` or `admin` (the UI sends `trainee` as `user`) | `Authorization: Bearer <JWT>` from its own `POST /api/v1/auth/login` |
+| Role from the dev header                                                          | Role read from its **database**, `user` or `admin`                   |
+| Zitadel bearer token later (sent unchanged)                                       | Does not accept it                                                   |
 
 What you will see until this is fixed: every call returns **401**, the page shows the server's message, and a "Your session has expired" toast appears. That means the connection works and only sign-in is missing.
 
 Options for the backend team:
 
-1. **For the demo:** accept the dashboard's dev headers in a non-production setting only, like Agent 3 does (`PODC_ENV` of `local` or `dev`). Map `trainee` to `user`. Never enable it in production; anyone can pick any role.
+1. **For the demo:** accept the dashboard's dev headers in a non-production setting only, like Agent 3 does (`PODC_ENV` of `local` or `dev`). The UI already sends `user` or `admin`. Never enable it in production; anyone can pick any role.
 2. **Later:** validate the Zitadel token and read the role from it. See [auth-zitadel.md](auth-zitadel.md). The UI already calls `useAuth().getAuthHeaders()`, so it will send the new header with no change.
 
 Also note: the backend refuses admins on analyses (403 `USER_ROLE_REQUIRED`). That matches the UI, where admins only get flag management.
@@ -131,15 +132,13 @@ The matching update to `Smart_Ops_Pod2/contracts/ui_api.openapi.yaml` is **not d
 
 ## Mock data and live data
 
-| Where                                     | Behaviour                                                                                                        |
-| ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| Deployed dashboard                        | **Mock** for now: the `Dockerfile` sets `VITE_AGENT2_USE_MOCKS=true`. A blue "Running on mock data" banner shows |
-| `npm run dev` with no env                 | **Mock**, no backend needed                                                                                      |
-| `VITE_AGENT2_USE_MOCKS=false npm run dev` | **Live**: calls `/agent2-api`, which the dev server proxies to `http://localhost:8001`                           |
+| Where                             | Behaviour                                                                                                  |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Deployed dashboard                | **Live**: the image builds with `VITE_USE_MOCKS=false`, so Agent 2 calls `/agent2-api` like Agents 3 and 4 |
+| `npm run dev` with no env         | **Live**: calls `/agent2-api`, which the dev server proxies to `http://localhost:8001`                     |
+| `VITE_USE_MOCKS=true npm run dev` | **Mock**: no backend needed, a blue "Running on mock data" banner shows (also used by the browser tests)   |
 
-Agent 2 has its own switch. The shared `VITE_USE_MOCKS` is `false` in the production image because Agents 3 and 4 are live, so it can't be used for Agent 2.
-
-**To go live on the server** once the backend is ready: set `AGENT2_API_URL` in the server `.env`, change `ARG VITE_AGENT2_USE_MOCKS=true` to `false` in the `Dockerfile`, merge, and redeploy.
+Agent 2 uses the same switch as Agents 3 and 4. **To connect on the server:** set `AGENT2_API_URL` in the server `.env`, merge, and redeploy (or recreate the container). Until the backend accepts the dashboard's sign-in, Agent 2 screens show a 401 message.
 
 **Before the demo, remove the mock parts** (they are listed in `src/agents/agent2/README.md`, "Before the demo"): `api/mock/`, the mock branch in `api/client.ts`, and the mock-only browser test.
 
@@ -166,7 +165,7 @@ Windows PowerShell blocks `npm` scripts by default. Run `Set-ExecutionPolicy -Sc
 | **401** and "session has expired" toast         | Connection is fine; sign-in mismatch (see above)                                                                                                   |
 | **403** `ADMIN_REQUIRED` / `USER_ROLE_REQUIRED` | Role mismatch between dashboard and backend                                                                                                        |
 | **413** on upload                               | File over the backend limit (`MAX_UPLOAD_BYTES`, 2 MB by default). nginx allows 5 MB                                                               |
-| Agent 2 shows a "Running on mock data" banner   | The page was built with `VITE_AGENT2_USE_MOCKS` not set to `false` (the current `Dockerfile` default)                                              |
+| Agent 2 shows a "Running on mock data" banner   | The page was built with `VITE_USE_MOCKS=true`. The production image sets it to `false`; check the build argument                                   |
 | Works locally, not on the server                | The server `.env` value is only read at container start; run the compose command with `--force-recreate`                                           |
 
 ## Not verified when this was written

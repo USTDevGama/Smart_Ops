@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useAuth } from '@/auth';
 import type { HostAuth } from './bridge';
+import { toBackendHeaders } from './devHeaders';
 
 /**
  * PORTAL VERSION of host/useHostAuth.ts. The merge script copies this file over the standalone one.
@@ -12,7 +13,7 @@ export function useHostAuth(): HostAuth {
   return useMemo<HostAuth>(
     () => ({
       user: user ? { name: user.name, role: user.role === 'admin' ? 'admin' : 'user' } : null,
-      getAuthHeaders,
+      getAuthHeaders: () => toBackendHeaders(getAuthHeaders()),
     }),
     [user, getAuthHeaders],
   );

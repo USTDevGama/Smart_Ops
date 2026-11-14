@@ -2,38 +2,52 @@
   "dataset": "performance-review-comments-sample",
   "records": [
     {
-      "id": "R-001",
-      "reviewer": "manager_a",
+      "id": "FB-001",
+      "reviewer": "R-01",
+      "trainee": "T-01",
+      "rating": 2,
       "comment": "He is a natural leader, but she tends to get emotional in meetings and should be coached on staying calm."
     },
     {
-      "id": "R-002",
-      "reviewer": "manager_b",
+      "id": "FB-002",
+      "reviewer": "R-02",
+      "trainee": "T-02",
+      "rating": 2,
       "comment": "At his age it is hard to expect him to pick up the new tooling; a younger digital native would adapt faster."
     },
     {
-      "id": "R-003",
-      "reviewer": "manager_c",
+      "id": "FB-003",
+      "reviewer": "R-03",
+      "trainee": "T-03",
+      "rating": 5,
       "comment": "Great delivery this quarter. Handles ambiguity well and mentors junior colleagues."
     },
     {
-      "id": "R-004",
-      "reviewer": "manager_a",
+      "id": "FB-004",
+      "reviewer": "R-01",
+      "trainee": "T-01",
+      "rating": 2,
       "comment": "With two small kids at home, I assumed she would not want the on-call rotation, so I did not offer it."
     },
     {
-      "id": "R-005",
-      "reviewer": "manager_d",
+      "id": "FB-005",
+      "reviewer": "R-04",
+      "trainee": "T-02",
+      "rating": 1,
       "comment": "His accent makes client calls difficult; we should staff someone who sounds more local."
     },
     {
-      "id": "R-006",
-      "reviewer": "manager_b",
+      "id": "FB-006",
+      "reviewer": "R-02",
+      "trainee": "T-03",
+      "rating": 2,
       "comment": "Seems to be from a rough background, so polish in executive settings will take time."
     },
     {
-      "id": "R-007",
-      "reviewer": "manager_e",
+      "id": "FB-007",
+      "reviewer": "R-05",
+      "trainee": "T-01",
+      "rating": 2,
       "comment": "Needs to dress more professionally and watch his weight if he wants to be client-facing."
     }
   ]
