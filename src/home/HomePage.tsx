@@ -40,12 +40,6 @@ export function HomePage() {
               </span>
               <h2 className={styles.name}>{a.name}</h2>
               <p className={styles.description}>{a.description}</p>
-              {a.note && (
-                <div className={styles.note}>
-                  <span className={styles.noteLabel}>{a.note.label}</span>
-                  <p>{a.note.text}</p>
-                </div>
-              )}
               <span className={styles.open}>
                 Open agent
                 <ArrowRight />
