@@ -39,7 +39,7 @@ For a clean slate, stop the API and delete `pod3.db`, then run the three `uv run
 
 With the fake model the chat works (scripted client replies and scores) but **reports cannot be generated**. The Report panel then says so: trainees get a plain message, admins are told to set `PODC_LLM_PROVIDER`. To test reports, run Pod3 with a real provider (see its README).
 
-The dev login sends `X-Dev-User` and `X-Dev-Role`, which Pod3 accepts only with `PODC_ENV=local` or `dev`.
+The dev login sends `X-Dev-User` and `X-Dev-Role`; trainees also send `X-Dev-Trainee-Id`. Pod3 accepts dev login only with `PODC_ENV=local` or `dev`.
 
 ### Browser tests
 

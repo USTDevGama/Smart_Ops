@@ -96,6 +96,7 @@ export type TurnOut = {
 export type SessionOut = {
   id: string;
   trainee_ref: string;
+  trainee_id?: string | null;
   profile_id: string;
   persona: { key: string; version_no: number };
   demand_id: string;

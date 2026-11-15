@@ -23,7 +23,11 @@ export function ReviewPage() {
     <div className="stack">
       <h1>Review chats</h1>
       <div className="row" style={{ alignItems: 'flex-end' }}>
-        <Input label="Trainee name" value={trainee} onChange={(e) => setTrainee(e.target.value)} />
+        <Input
+          label="Trainee name or ID"
+          value={trainee}
+          onChange={(e) => setTrainee(e.target.value)}
+        />
         <Select
           label="Status"
           value={status}
@@ -45,6 +49,11 @@ export function ReviewPage() {
           columns={[
             { key: 'started', header: 'Started', render: (s) => shortDate(s.started_at) },
             { key: 'trainee', header: 'Trainee', render: (s) => s.trainee_ref },
+            {
+              key: 'traineeId',
+              header: 'Trainee ID',
+              render: (s) => s.trainee_id ?? 'Not recorded',
+            },
             {
               key: 'client',
               header: 'Client',
@@ -83,7 +92,11 @@ function SessionView({ id, onClose }: { id: string; onClose: () => void }) {
   return (
     <section className="stack" aria-label="Chat detail">
       <div className="row-between">
-        <h2>{s ? `${s.trainee_ref} with ${s.persona.key}` : 'Chat'}</h2>
+        <h2>
+          {s
+            ? `${s.trainee_ref} (${s.trainee_id ?? 'ID not recorded'}) with ${s.persona.key}`
+            : 'Chat'}
+        </h2>
         <Button variant="secondary" compact onClick={onClose}>
           Close
         </Button>
