@@ -12,6 +12,7 @@ import {
   outcomeLine,
   pendingNote,
   percentOfScale,
+  podRows,
   recommendationCards,
   reportErrorText,
   reportFileName,
@@ -199,7 +200,7 @@ export function ResultsBlock({ summary }: { summary: Summary }) {
   const [busy, setBusy] = useState(false);
   const api = useAgent4Api();
   const threshold = summary.gap_threshold;
-  const groups = groupScoreRows(summary.scores, threshold);
+  const groups = groupScoreRows(podRows(summary.scores), threshold);
   const cards = recommendationCards(summary.gaps);
 
   async function download() {
@@ -290,7 +291,11 @@ export function ResultsBlock({ summary }: { summary: Summary }) {
               <div key={group.status}>
                 <div className={styles.group}>{group.title}</div>
                 {group.rows.map((row) => (
-                  <ScoreLine key={row.goal} row={row} threshold={threshold} />
+                  <ScoreLine
+                    key={`${row.goal}-${row.by_source[0]?.code ?? 'combined'}`}
+                    row={row}
+                    threshold={threshold}
+                  />
                 ))}
               </div>
             ))}
