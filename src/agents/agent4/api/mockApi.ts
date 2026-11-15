@@ -55,20 +55,48 @@ const PENDING_BC = [
 
 // T-06: every section has data. T-01: only the interview (A) has data, so B and C are pending;
 // G05 is "not covered" in the database and G12 has no entry.
+// Each pod's own score. G06 is scored by two pods, so it has two entries. The combined score is
+// the average, and the screen shows each pod on its own line.
+const PODS: Record<string, ScoreRow['by_source']> = {
+  G06: [
+    { code: 'B', label: 'Peer feedback', score: 3 },
+    { code: 'C', label: 'Roleplay', score: 4 },
+  ],
+  G08: [{ code: 'C', label: 'Roleplay', score: 3 }],
+};
+
 function scoreRows(partial: boolean): ScoreRow[] {
   return MOCK_SCORES.map(([goal, base]): ScoreRow => {
     if (partial && goal === 'G05') {
-      return { goal, label: LABELS[goal], score: null, status: 'not_covered', sources: [] };
+      return {
+        goal,
+        label: LABELS[goal],
+        score: null,
+        status: 'not_covered',
+        by_source: [],
+        sources: [],
+      };
     }
     if (base === null) {
-      return { goal, label: LABELS[goal], score: null, status: 'not_available', sources: [] };
+      return {
+        goal,
+        label: LABELS[goal],
+        score: null,
+        status: 'not_available',
+        by_source: [],
+        sources: [],
+      };
     }
     const sections = partial ? ['A_scores'] : (SOURCE_OF[goal] ?? ['A_scores']);
+    const pods: ScoreRow['by_source'] = partial
+      ? [{ code: 'A', label: 'Interview', score: base }]
+      : (PODS[goal] ?? [{ code: 'A', label: 'Interview', score: base }]);
     return {
       goal,
       label: LABELS[goal],
       score: base,
       status: 'scored',
+      by_source: pods,
       sources: sections.map((section) => `${section}.${goal}=${base}`),
     };
   });

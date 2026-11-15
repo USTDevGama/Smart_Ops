@@ -21,6 +21,7 @@ const SUMMARY: Summary = {
       label: 'Handling client pressure',
       score: 2,
       status: 'scored',
+      by_source: [{ code: 'C', label: 'Roleplay', score: 2 }],
       sources: ['C_scores.G08=2'],
     },
   ],

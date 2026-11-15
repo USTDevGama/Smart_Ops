@@ -15,11 +15,17 @@ export type GoalStatus = 'scored' | 'not_covered' | 'not_available';
 
 // One goal's score. Goals come back in code order G01 to G12. score is null unless status is
 // 'scored': never show a number for the other two.
+// One pod's own score for a goal. A goal scored by two pods has two of these, shown separately.
+export type SourceScore = { code: 'A' | 'B' | 'C'; label: string; score: number };
+
 export type ScoreRow = {
   goal: string;
   label: string;
+  // The combined score. The screen shows each pod in by_source instead, so this is not shown.
   score: number | null;
   status: GoalStatus;
+  // One entry per pod that scored the goal. Empty when the goal is not scored.
+  by_source: SourceScore[];
   // Where each score came from, e.g. "B_themes.G06=3" (A_scores, B_themes, C_scores).
   sources: string[];
 };
