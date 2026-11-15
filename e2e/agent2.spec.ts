@@ -7,6 +7,7 @@ async function signIn(page: Page, name: string, role: 'Trainee' | 'Admin') {
   await page.goto('/login');
   await page.getByLabel('Your name').fill(name);
   await page.getByLabel('Role').selectOption(role);
+  if (role === 'Trainee') await page.getByLabel('Trainee ID').fill('T-1001');
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
 }
 

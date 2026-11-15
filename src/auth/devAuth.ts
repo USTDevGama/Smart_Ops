@@ -12,7 +12,9 @@ export function loadDevUser(): User | null {
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Partial<User>;
     if (typeof parsed.name === 'string' && parsed.name && isRole(parsed.role)) {
-      return { name: parsed.name, role: parsed.role };
+      const traineeId =
+        typeof parsed.traineeId === 'string' && parsed.traineeId ? parsed.traineeId : undefined;
+      return { name: parsed.name, role: parsed.role, ...(traineeId && { traineeId }) };
     }
   } catch {
     /* storage unavailable or corrupt: treat as signed out */
@@ -31,5 +33,8 @@ export function saveDevUser(user: User | null): void {
 
 /** Matches Smart_Ops_Pod3 `app/api/deps.py` dev auth. Only valid while the backend runs in local/dev. */
 export function devHeaders(user: User | null): Record<string, string> {
-  return user ? { 'X-Dev-User': user.name, 'X-Dev-Role': user.role } : {};
+  if (!user) return {};
+  const headers: Record<string, string> = { 'X-Dev-User': user.name, 'X-Dev-Role': user.role };
+  if (user.traineeId) headers['X-Dev-Trainee-Id'] = user.traineeId;
+  return headers;
 }

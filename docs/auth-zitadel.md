@@ -4,7 +4,7 @@
 
 - `LoginPage` takes a name and a role (Trainee or Admin).
 - `AuthProvider` keeps `{ name, role }` in `sessionStorage` (key `main-ui.dev-user`).
-- `getAuthHeaders()` returns `X-Dev-User` and `X-Dev-Role`. Smart_Ops_Pod3 accepts these only while it runs with `PODC_ENV` of `local` or `dev`.
+- `getAuthHeaders()` returns `X-Dev-User`, `X-Dev-Role` and (trainees only) `X-Dev-Trainee-Id`. Smart_Ops_Pod3 accepts these only while it runs with `PODC_ENV` of `local` or `dev`.
 - This is **not secure**. Anyone can pick any role. Never deploy it.
 
 ## The seam
@@ -14,7 +14,7 @@ Everything outside `src/auth` uses only this interface (`src/auth/types.ts`):
 ```ts
 interface AuthProviderApi {
   user: { name: string; role: 'trainee' | 'admin' } | null;
-  login(name: string, role: Role): void; // dev only
+  login(name: string, role: Role, traineeId?: string): void; // dev only
   logout(): void;
   getAuthHeaders(): Record<string, string>;
 }
