@@ -80,23 +80,6 @@ export function signalsFor(sources: string[]): Signal[] {
     .map((code) => ({ code, label: SIGNAL_LABEL[code] }));
 }
 
-// One line per pod. A goal scored by two pods (for example Interview and Roleplay) becomes two rows,
-// each with that pod's own score and its own signal. A goal with no pod score stays one row.
-export function podRows(rows: ScoreRow[]): ScoreRow[] {
-  return rows.flatMap((row) =>
-    row.by_source.length === 0
-      ? [row]
-      : row.by_source.map((pod) => ({
-          goal: row.goal,
-          label: `${row.label} · ${pod.label}`,
-          score: pod.score,
-          status: 'scored' as const,
-          by_source: [pod],
-          sources: row.sources.filter((source) => SOURCE_SIGNAL[source.split('.')[0]] === pod.code),
-        })),
-  );
-}
-
 // The three groups in the scores list, in the order the design shows them.
 export type ScoreGroup = { status: ScoreStatus; title: string; rows: ScoreRow[] };
 

@@ -28,13 +28,7 @@ import {
 // there is a number, otherwise not_available unless the goal is listed as not covered) and the
 // pending sections.
 type Raw = Omit<Summary, 'scores' | 'not_assessed' | 'pending_sections'> & {
-  scores: {
-    goal: string;
-    label: string;
-    score: number | null;
-    by_source?: Summary['scores'][number]['by_source'];
-    sources: string[];
-  }[];
+  scores: { goal: string; label: string; score: number | null; sources: string[] }[];
   not_assessed: { goal: string; label: string }[];
 };
 function full(raw: Raw, notCovered: string[] = [], pending: Summary['pending_sections'] = []) {
@@ -46,11 +40,7 @@ function full(raw: Raw, notCovered: string[] = [], pending: Summary['pending_sec
         : 'not_available';
   const summary: Summary = {
     ...raw,
-    scores: raw.scores.map((row) => ({
-      ...row,
-      by_source: row.by_source ?? [],
-      status: statusOf(row.goal, row.score),
-    })),
+    scores: raw.scores.map((row) => ({ ...row, status: statusOf(row.goal, row.score) })),
     not_assessed: raw.not_assessed.map((row) => ({ ...row, status: statusOf(row.goal, null) })),
     pending_sections: pending,
   };
@@ -500,7 +490,6 @@ describe('partial result from the agent', () => {
       label: `Label ${goal}`,
       score: goal === 'G01' ? 3 : null,
       status: status(goal),
-      by_source: goal === 'G01' ? [{ code: 'A', label: 'Interview', score: 3 }] : [],
       sources: goal === 'G01' ? ['A_scores.G01=3'] : [],
     })),
     not_assessed: goals
