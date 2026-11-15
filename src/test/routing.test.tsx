@@ -106,6 +106,16 @@ describe('role separation in agent 3', () => {
     expect(screen.queryByRole('heading', { name: 'Set the stage' })).not.toBeInTheDocument();
   });
 
+  it('shows the profile in the account menu', async () => {
+    renderAt('/login');
+    await signIn('Trainee', 'anna');
+    await userEvent.click(await screen.findByRole('button', { name: /Account menu/ }));
+    const profile = screen.getByLabelText('Your profile');
+    expect(profile).toHaveTextContent('anna');
+    expect(profile).toHaveTextContent('Trainee');
+    expect(profile).toHaveTextContent('T-1001');
+  });
+
   it('signs out', async () => {
     renderAt('/login');
     await signIn('Trainee');
