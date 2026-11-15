@@ -4,6 +4,7 @@ import { Button, Card, Input, Select } from '@/components/ui';
 import { useAuth } from './AuthProvider';
 import { isRole } from './devAuth';
 import type { Role } from './types';
+import logo from '@/assets/ust/ust-motion-logo_static.png';
 import styles from './LoginPage.module.css';
 
 export function LoginPage() {
@@ -36,11 +37,20 @@ export function LoginPage() {
   return (
     <main className={styles.page}>
       <Card className={styles.card}>
+        <img className={styles.logo} src={logo} alt="UST" width={40} height={40} />
         <form className="stack" onSubmit={onSubmit} noValidate>
           <div className="stack-sm">
             <h1>Sign in</h1>
-            <p>Choose an agent after you sign in.</p>
+            <p>Pick your role, then choose an agent.</p>
           </div>
+          <Select
+            label="Role"
+            value={role}
+            onChange={(e) => isRole(e.target.value) && setRole(e.target.value)}
+          >
+            <option value="trainee">Trainee</option>
+            <option value="admin">Admin</option>
+          </Select>
           <Input
             label="Your name"
             value={name}
@@ -50,27 +60,21 @@ export function LoginPage() {
             }}
             error={error}
             autoComplete="username"
-            autoFocus
           />
-          <Select
-            label="Role"
-            value={role}
-            onChange={(e) => isRole(e.target.value) && setRole(e.target.value)}
-          >
-            <option value="trainee">Trainee</option>
-            <option value="admin">Admin</option>
-          </Select>
           {role === 'trainee' && (
-            <Input
-              label="Trainee ID"
-              value={traineeId}
-              onChange={(e) => {
-                setTraineeId(e.target.value);
-                setIdError(undefined);
-              }}
-              error={idError}
-              autoComplete="off"
-            />
+            <div className={styles.reveal}>
+              <Input
+                label="Trainee ID"
+                value={traineeId}
+                onChange={(e) => {
+                  setTraineeId(e.target.value);
+                  setIdError(undefined);
+                }}
+                error={idError}
+                autoComplete="off"
+                helper="Your ID from the training programme."
+              />
+            </div>
           )}
           <Button type="submit">Sign in</Button>
           <Button variant="secondary" disabled title="Available once Zitadel is configured">

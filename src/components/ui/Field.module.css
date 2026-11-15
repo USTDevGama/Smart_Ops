@@ -16,6 +16,7 @@
   border: 1px solid var(--neu-200);
   border-radius: var(--radius-sm);
   font: 400 14px/20px var(--font-sans);
+  transition: border-color 0.15s;
 }
 .control::placeholder {
   color: var(--neu-500);
