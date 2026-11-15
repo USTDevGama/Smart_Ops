@@ -295,10 +295,26 @@
   gap: 12px;
   flex-wrap: wrap;
 }
+.exTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex-wrap: wrap;
+}
 .exTitle {
   margin: 0;
   font: 600 15px/1.4 var(--ust-font-text);
   color: var(--ust-ink);
+}
+/* Icon-only link beside the exercise title. The name is in aria-label and title. */
+.resourceLink {
+  display: inline-flex;
+  color: var(--ust-ink-soft);
+  text-decoration: none;
+}
+.resourceLink:hover {
+  color: var(--gap);
 }
 .chip {
   font: 600 12px/18px var(--ust-font-text);

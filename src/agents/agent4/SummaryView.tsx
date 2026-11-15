@@ -104,11 +104,47 @@ function ScoreLine({ row, threshold }: { row: ScoreRow; threshold: number }) {
   );
 }
 
+/** A link glyph beside an exercise title. Decorative; the link's name is given by aria-label. */
+function ExternalLinkIcon() {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path d="M6.5 3.5H3.5V12.5H12.5V9.5" />
+      <path d="M9 3.5H12.5V7" />
+      <path d="M12.5 3.5L7.5 8.5" />
+    </svg>
+  );
+}
+
 function RecommendationCard({ card }: { card: Card }) {
   return (
     <article className={styles.exCard}>
       <header className={styles.exHead}>
-        <h3 className={styles.exTitle}>{card.title}</h3>
+        <div className={styles.exTitleRow}>
+          <h3 className={styles.exTitle}>{card.title}</h3>
+          {card.resource && (
+            <a
+              className={styles.resourceLink}
+              href={card.resource.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`Open learning resource: ${card.resource.name} (opens in a new tab)`}
+              title={card.resource.name}
+            >
+              <ExternalLinkIcon />
+            </a>
+          )}
+        </div>
         {card.minutes !== null && (
           <span className={styles.chip}>{formatMinutes(card.minutes)}</span>
         )}
