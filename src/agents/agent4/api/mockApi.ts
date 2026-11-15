@@ -177,6 +177,15 @@ export function createMockApi(): Agent4Api {
       return record.summary;
     },
 
+    async getApprovedSummary(traineeId) {
+      await sleep();
+      const record = store.get(traineeId);
+      if (record?.status !== 'approved') {
+        throw new ApiError(404, 'No approved report yet');
+      }
+      return record.summary;
+    },
+
     async assess(traineeId) {
       await sleep();
       if (!traineeId.startsWith('T-')) {

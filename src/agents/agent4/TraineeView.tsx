@@ -29,7 +29,7 @@ export function TraineeView() {
     if (!traineeId) return;
     let cancelled = false;
     setResult({ kind: 'loading' });
-    api.getSummary(traineeId).then(
+    api.getApprovedSummary(traineeId).then(
       (summary) => {
         if (!cancelled) setResult({ kind: 'ok', summary });
       },
