@@ -38,6 +38,8 @@ export interface ApiClient {
   decide(runId: string, itemId: string, req: DecisionRequest): Promise<Run>;
   /** GET /runs: history for the current session, newest first */
   listRuns(): Promise<RunSummary[]>;
+  /** DELETE /runs/{id}: removes the run and its results from the history (204). 409 while it is still queued or running. */
+  deleteRun(runId: string): Promise<void>;
   /** GET /runs/{id}/result */
   getResult(runId: string): Promise<RunResult>;
 }

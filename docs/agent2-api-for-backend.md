@@ -64,6 +64,7 @@ If the body is not in this shape the UI falls back to the HTTP status text, so k
 | 409    | `duplicate_name`     | A flag with that name already exists (compare ignoring case)                                                                 |
 | 409    | `no_enabled_flags`   | Run started but every flag is disabled                                                                                       |
 | 409    | `run_not_reviewable` | Decision sent when the run is not in `needs_review`                                                                          |
+| 409    | `run_in_progress`    | `DELETE /runs/{id}` while the run is queued or running                                                                       |
 | 409    | `result_not_ready`   | `GET /runs/{id}/result` before the run is completed                                                                          |
 | 413    | any                  | Upload too large                                                                                                             |
 
@@ -189,6 +190,8 @@ How `status` moves: `queued` -> `running` -> (`needs_review` ->) `completed`, or
 
 `top_flags` is up to 3 flag names that were raised. Counts are only meaningful once the run has finished (the UI shows "..." while running).
 
+**`DELETE /runs/{run_id}`**: the History card's Delete button (after the person confirms). **Permanently remove the run and its review items and results from the database**, then answer `204` with no body. Errors: 404 `not_found` for an unknown run or another session's run (the UI treats it as already deleted), 409 `run_in_progress` while the run is `queued` or `running` (the UI disables the button for those, so this is a safety net), 401/403 as usual.
+
 ### The result (final output)
 
 This is the agent's own JSON, so keep its field names. `result` on a completed run:
@@ -256,6 +259,7 @@ Through the live dashboard the same call is `http://10.100.242.180:8086/agent2-a
 - [ ] `GET /runs/{id}` returns the Run shape above, with `batch_id`, and `review_items` using `flag`, `subject`, `evidence_ids`, `explanation`.
 - [ ] The decision endpoint takes only `accept` or `reject` and returns the updated Run; the run becomes `completed` with `result` once nothing is pending.
 - [ ] `result.detected_flags` uses upper-case `status` and `subject` as `"R-02 <-> T-03"`.
+- [ ] `DELETE /runs/{id}` removes the run, its review items and results from the database and returns 204; it is limited to the caller's session.
 - [ ] `GET /runs` is limited to the caller's session and sorted newest first.
 - [ ] Every error uses `{ "error": { code, message } }`.
 - [ ] `ui_api.openapi.yaml` and the sample JSON in `Smart_Ops_Pod2` are updated to match this page.

@@ -305,6 +305,18 @@ export class MockClient implements ApiClient {
       });
   }
 
+  async deleteRun(runId: string): Promise<void> {
+    await this.wait();
+    this.requireUser();
+    const db = this.load();
+    const rec = this.getRecord(db, runId);
+    const status = materialize(rec, this.now()).status;
+    if (status === 'queued' || status === 'running')
+      throw new ApiError(409, 'run_in_progress', `Run is ${status}; wait until it has finished`);
+    delete db.runs[runId];
+    this.save(db);
+  }
+
   async getResult(runId: string): Promise<RunResult> {
     await this.wait();
     this.requireUser();
