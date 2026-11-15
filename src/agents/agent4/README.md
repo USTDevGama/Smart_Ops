@@ -46,13 +46,19 @@ uses Figtree and figures use IBM Plex Mono. The palette is in `theme.css`, not i
 Calls go to the Pod 4 API (`Smart_Ops_Pod4`, FastAPI) through the Vite proxy `/agent4-api`,
 which forwards to `VITE_AGENT4_API_URL` (default `http://localhost:8010`).
 
-| Method | Path                              | Used for                                                                                    |
-| ------ | --------------------------------- | ------------------------------------------------------------------------------------------- |
-| GET    | `/v1/trainees`                    | Trainee list                                                                                |
-| GET    | `/v1/trainees/{id}/summary`       | Results (404: no results; 409: a section A, B or C is missing; 503: retry)                  |
-| POST   | `/v1/trainees/{id}/assessments`   | Run an assessment                                                                           |
-| POST   | `/v1/diagnostics/{run_id}/review` | Approve or reject                                                                           |
-| (none) | PDF                               | Built in the browser from the summary (`reportPdf.ts`); the server PDF endpoint is not used |
+| Method | Path                              | Used for                                                                       |
+| ------ | --------------------------------- | ------------------------------------------------------------------------------ |
+| GET    | `/v1/trainees`                    | Trainee list                                                                   |
+| GET    | `/v1/trainees/{id}/summary`       | Results, partial allowed (`pending_sections`); 404: no results; 503: try again |
+| POST   | `/v1/trainees/{id}/assessments`   | Run an assessment                                                              |
+| POST   | `/v1/diagnostics/{run_id}/review` | Approve or reject                                                              |
+| POST   | `/v1/reports/pdf`                 | Send the summary JSON, get a PDF back (503: server has no PDF engine)          |
+
+The summary no longer has `severity`, `report`, `skill_gaps` or `recommendations`, and the server
+no longer returns 409 for incomplete data. Each goal has a `status` (`scored`, `not_covered`,
+`not_available`); a goal that is not `scored` shows "Not covered" or "Not available" instead of a
+number. The source tags (Interview, Peer feedback, Roleplay) come from each row's `sources`.
+In mock mode the PDF is built in the browser (`reportPdf.ts`) from the same summary.
 
 Auth headers come from `useAuth().getAuthHeaders()`. The Pod 4 API needs no token when
 its ZITADEL settings are empty and `ASGD_ENV` is `local` or `dev` (see its `docs/sign-in.md`).
@@ -76,7 +82,8 @@ The request and response shapes were checked by reading the Pod 4 routes (`app/a
 ## Run and test
 
 - Mock data (no backend): `VITE_USE_MOCKS=true npm run dev`. Trainees `T-06` (full report)
-  and `T-09` (too-old assessment) are in the mock. Sign in as a trainee with one of those IDs.
+  and `T-01` (partial: Peer feedback and Roleplay pending, G05 not covered, G12 not available)
+  are in the mock. Sign in as a trainee with one of those IDs.
 - Real API: start the Pod 4 API on port 8010, then `npm run dev`.
 - Tests: `npm test`. Browser tests: `npm run test:e2e`.
 

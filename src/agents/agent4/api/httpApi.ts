@@ -22,7 +22,7 @@ export function errorDetail(body: unknown, fallback: string): string {
 
 /** Creates the real API client. Auth headers come from useAuth().getAuthHeaders(). */
 export function createHttpApi(getAuthHeaders: () => Record<string, string>): Agent4Api {
-  async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+  async function send(path: string, init: RequestInit, expect: string): Promise<Response> {
     const headers = new Headers(init.headers);
     for (const [key, value] of Object.entries(getAuthHeaders())) headers.set(key, value);
 
@@ -33,7 +33,7 @@ export function createHttpApi(getAuthHeaders: () => Record<string, string>): Age
       throw new ApiError(0, 'The agent service could not be reached.');
     }
     // A page of HTML here means the server did not route /agent4-api to the API.
-    if (response.ok && !response.headers.get('content-type')?.includes('application/json')) {
+    if (response.ok && !response.headers.get('content-type')?.includes(expect)) {
       throw new ApiError(
         response.status,
         'The agent API did not return data. The server must route /agent4-api to the Pod 4 API.',
@@ -51,6 +51,11 @@ export function createHttpApi(getAuthHeaders: () => Record<string, string>): Age
         errorDetail(body, `The service returned ${response.status}.`),
       );
     }
+    return response;
+  }
+
+  async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+    const response = await send(path, init, 'application/json');
     return (await response.json()) as T;
   }
 
@@ -63,6 +68,18 @@ export function createHttpApi(getAuthHeaders: () => Record<string, string>): Age
       request<{ run_id: string; status: RunStatus }>(`${traineePath(id)}/assessments`, {
         method: 'POST',
       }),
+    downloadReport: async (summary) => {
+      const response = await send(
+        '/v1/reports/pdf',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(summary),
+        },
+        'application/pdf',
+      );
+      return response.blob();
+    },
     submitReview: (runId, body: ReviewBody) =>
       request<{ run_id: string; status: RunStatus }>(
         `/v1/diagnostics/${encodeURIComponent(runId)}/review`,

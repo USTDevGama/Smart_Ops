@@ -1,7 +1,7 @@
 // Pure helpers for the results page. No React here, so the rules can be tested directly.
 // Every number on the page comes from the Summary the API returns. Nothing is written in by hand.
 
-import type { GapSummary, Outcome, RunStatus, ScoreRow } from './api';
+import type { GapSummary, GoalStatus, Outcome, RunStatus, ScoreRow } from './api';
 import { resourceForExercise, type ResourceLink } from './resourceLinks';
 
 export const SCALE_MAX = 5;
@@ -26,6 +26,11 @@ export const STATUS_PILL_TEXT: Record<ScoreStatus, string> = {
 export function scoreStatus(score: number | null, threshold: number): ScoreStatus {
   if (score === null) return 'not_assessed';
   return score <= threshold ? 'gap' : 'met';
+}
+
+// A goal without status 'scored' is never given a number, whatever the score field holds.
+export function rowStatus(row: ScoreRow, threshold: number): ScoreStatus {
+  return row.status === 'scored' ? scoreStatus(row.score, threshold) : 'not_assessed';
 }
 
 // Position of a value on the 0 to 5 bar, as a CSS percentage.
@@ -81,7 +86,7 @@ export function groupScoreRows(rows: ScoreRow[], threshold: number): ScoreGroup[
     { status: 'not_assessed', title: 'Not assessed', rows: [] },
   ];
   for (const row of sorted) {
-    const status = scoreStatus(row.score, threshold);
+    const status = rowStatus(row, threshold);
     groups.find((group) => group.status === status)?.rows.push(row);
   }
   return groups.filter((group) => group.rows.length > 0);
@@ -116,11 +121,31 @@ export function joinNames(items: string[]): string {
 
 const goalName = (row: { goal: string; label: string }) => `${row.goal} ${row.label}`;
 
-// The sentence under "Not assessed". The design adds a fixed line after it.
-export function notAssessedNote(rows: { goal: string; label: string }[]): string {
-  const names = joinNames(rows.map(goalName));
-  if (rows.length === 1) return `${names} has no evidence yet, so it is not scored.`;
-  return `${names} have no evidence yet, so they are not scored.`;
+// The sentence under "Not assessed". The design adds a fixed line after it. Goals the database
+// says are "not covered" are named apart from goals with no entry.
+export function notAssessedNote(
+  rows: { goal: string; label: string; status?: GoalStatus }[],
+): string {
+  const covered = rows.filter((row) => row.status === 'not_covered');
+  const rest = rows.filter((row) => row.status !== 'not_covered');
+  const sentences: string[] = [];
+  if (rest.length > 0) {
+    const names = joinNames(rest.map(goalName));
+    sentences.push(
+      rest.length === 1
+        ? `${names} has no evidence yet, so it is not scored.`
+        : `${names} have no evidence yet, so they are not scored.`,
+    );
+  }
+  if (covered.length > 0) {
+    const names = joinNames(covered.map(goalName));
+    sentences.push(
+      covered.length === 1
+        ? `${names} is not covered, so it is not scored.`
+        : `${names} are not covered, so they are not scored.`,
+    );
+  }
+  return sentences.join(' ');
 }
 
 // One card per exercise. A gap with no approved exercise gets one card that says so.
@@ -191,21 +216,29 @@ export function outcomeLine(outcome: Outcome): string {
 }
 
 // What the screen says for each error from the summary. The server's own text is for developers.
-export function summaryErrorText(status: number, role: 'trainee' | 'admin'): string {
-  if (status === 404) {
-    return role === 'trainee'
-      ? 'No results yet for this trainee ID. Check it and try again.'
-      : 'No results yet for this trainee.';
-  }
-  if (status === 409) {
-    return role === 'trainee'
-      ? 'Complete all your assessments to view your results.'
-      : 'This trainee has not completed all assessments yet.';
-  }
-  if (status === 503) {
-    return 'The agent could not check this result. Try again in a moment.';
-  }
+// 409 is no longer returned for incomplete data: a partial summary comes back instead.
+export function summaryErrorText(status: number): string {
+  if (status === 404) return 'No results yet for this trainee.';
+  if (status === 503) return 'Try again.';
   return 'The results could not be loaded.';
+}
+
+// What the PDF download says when it fails. 503 means the server has no PDF engine installed.
+export function reportErrorText(status: number): string {
+  if (status === 503)
+    return 'The server cannot make PDF reports right now (PDF engine not installed).';
+  return 'The report could not be downloaded.';
+}
+
+// The note under the overview while a section (A, B or C) has no data yet. Empty when none.
+export function pendingNote(sections: { label: string }[]): string {
+  if (sections.length === 0) return '';
+  return `Showing the results received so far. Still waiting for ${joinNames(sections.map((s) => s.label))}.`;
+}
+
+// Shown in place of the score when a goal has none. A number is never shown for these.
+export function goalStatusText(status: GoalStatus): string {
+  return status === 'not_covered' ? 'Not covered' : 'Not available';
 }
 
 // File name for the download, as the server names it: trainee-{id}-report.pdf.

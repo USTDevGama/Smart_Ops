@@ -16,7 +16,13 @@ const SUMMARY: Summary = {
   goal_count: 12,
   gap_threshold: 2,
   scores: [
-    { goal: 'G08', label: 'Handling client pressure', score: 2, sources: ['C_scores.G08=2'] },
+    {
+      goal: 'G08',
+      label: 'Handling client pressure',
+      score: 2,
+      status: 'scored',
+      sources: ['C_scores.G08=2'],
+    },
   ],
   gaps: [
     {
@@ -31,7 +37,8 @@ const SUMMARY: Summary = {
     },
   ],
   strong: [{ goal: 'G11', label: 'Teamwork', score: 5 }],
-  not_assessed: [{ goal: 'G12', label: 'Independent learning' }],
+  not_assessed: [{ goal: 'G12', label: 'Independent learning', status: 'not_available' }],
+  pending_sections: [],
   review_required: true,
   versions: { rules: '0.1.0', mapping: '0.2.0', content_library: 'builtin:sha256:x' },
 };
@@ -61,14 +68,32 @@ describe('summary', () => {
     expect(result.gaps[0].why).toBe('Plain text reason.');
   });
 
-  it('turns a 409 into an ApiError with the status kept', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue(jsonResponse({ detail: 'section missing' }, 409)),
-    );
-    await expect(api.getSummary('SYN-02')).rejects.toMatchObject({
-      status: 409,
-    });
-    await expect(api.getSummary('SYN-02')).rejects.toBeInstanceOf(ApiError);
+  it('turns a 404 and a 503 into an ApiError with the status kept', async () => {
+    for (const status of [404, 503]) {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ detail: 'x' }, status)));
+      await expect(api.getSummary('SYN-02')).rejects.toMatchObject({ status });
+      await expect(api.getSummary('SYN-02')).rejects.toBeInstanceOf(ApiError);
+    }
+  });
+});
+
+describe('PDF report', () => {
+  it('posts the summary and returns the file', async () => {
+    const pdf = new Response('%PDF-1.4', { headers: { 'content-type': 'application/pdf' } });
+    const fetchMock = vi.fn().mockResolvedValue(pdf);
+    vi.stubGlobal('fetch', fetchMock);
+
+    const blob = await api.downloadReport(SUMMARY);
+
+    expect(fetchMock.mock.calls[0][0]).toBe('/agent4-api/v1/reports/pdf');
+    const init = fetchMock.mock.calls[0][1] as RequestInit;
+    expect(init.method).toBe('POST');
+    expect(JSON.parse(init.body as string).trainee_id).toBe('SYN-02');
+    expect(blob.size).toBe('%PDF-1.4'.length);
+  });
+
+  it('keeps the 503 status when the server has no PDF engine', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ detail: 'no engine' }, 503)));
+    await expect(api.downloadReport(SUMMARY)).rejects.toMatchObject({ status: 503 });
   });
 });

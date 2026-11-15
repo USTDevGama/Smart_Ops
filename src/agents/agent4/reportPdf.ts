@@ -10,11 +10,12 @@ import type { Summary } from './api';
 import {
   exerciseTotals,
   formatMinutes,
+  goalStatusText,
   groupScoreRows,
   notAssessedNote,
   outcomeLine,
   recommendationCards,
-  scoreStatus,
+  rowStatus,
   SIGNAL_LABEL,
   signalsFor,
   STATUS_PILL_TEXT,
@@ -260,7 +261,7 @@ function scores(doc: Doc, summary: Summary): void {
     doc.y += 16;
 
     for (const row of group.rows) {
-      const state: ScoreStatus = scoreStatus(row.score, threshold);
+      const state: ScoreStatus = rowStatus(row, threshold);
       const isGap = state === 'gap';
       const lines = doc.wrap(`${row.goal} ${row.label}`, 9, NAME_W, isGap ? 'bold' : 'normal');
       const signals = signalsFor(row.sources);
@@ -277,9 +278,9 @@ function scores(doc: Doc, summary: Summary): void {
 
       const numRight = MARGIN + W - 72;
       const numY = doc.y + h / 2 + 3;
-      if (row.score === null) {
+      if (row.status !== 'scored' || row.score === null) {
         doc.setFont(SANS, 'normal', 9, INK_SOFT);
-        doc.pdf.text('-', numRight, numY, { align: 'right' });
+        doc.pdf.text(goalStatusText(row.status), numRight, numY, { align: 'right' });
       } else {
         doc.setFont(MONO, 'bold', 10, INK);
         doc.pdf.text(String(row.score), numRight, numY, { align: 'right' });
