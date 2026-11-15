@@ -1,7 +1,7 @@
 /* ASGD screen theme: UST brand palette, light only (no dark mode).
    Source: UST_Brand_Design skill, tokens/colors.css, typography.css, materials.css.
    Scoped to .asgd so the shared shell and the other agents keep their own tokens.
-   Square corners, no shadows, two rule weights. Figures use the mono face. */
+   Soft rounded corners (radius tokens below), no shadows, two rule weights. Figures use the mono face. */
 @import url('https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=Figtree:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
 
 .asgd {
@@ -16,6 +16,13 @@
   --ust-hairline: #dbdbd9;
   --ust-rule-heavy: #33383c;
   --ust-track: #ececea;
+
+  /* Corner radius for this screen. Overriding the portal tokens here also rounds the shared
+     UI kit (buttons, inputs, alerts, tables) inside .asgd, so the page looks like one piece. */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --ust-pill: 999px;
 
   --ust-font-display: 'Archivo', 'Figtree', system-ui, sans-serif;
   --ust-font-text: 'Figtree', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
