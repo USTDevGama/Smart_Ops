@@ -2,6 +2,7 @@
 // Every number on the page comes from the Summary the API returns. Nothing is written in by hand.
 
 import type { GapSummary, Outcome, RunStatus, ScoreRow } from './api';
+import { resourceForExercise, type ResourceLink } from './resourceLinks';
 
 export const SCALE_MAX = 5;
 
@@ -130,6 +131,7 @@ export type RecommendationCard = {
   goal: string;
   why: string;
   outcomes: Outcome[];
+  resource: ResourceLink | null;
 };
 
 export function recommendationCards(gaps: GapSummary[]): RecommendationCard[] {
@@ -144,6 +146,7 @@ export function recommendationCards(gaps: GapSummary[]): RecommendationCard[] {
           goal,
           why: gap.why,
           outcomes: gap.outcomes,
+          resource: null,
         },
       ];
     }
@@ -154,6 +157,7 @@ export function recommendationCards(gaps: GapSummary[]): RecommendationCard[] {
       goal: `${goal} (score ${gap.score})`,
       why: gap.why,
       outcomes: gap.outcomes,
+      resource: resourceForExercise(exercise.id) ?? null,
     }));
   });
 }
