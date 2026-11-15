@@ -16,6 +16,7 @@ async function signIn(role: 'Trainee' | 'Admin', name = 'anna') {
   const user = userEvent.setup();
   await user.type(screen.getByLabelText('Your name'), name);
   await user.selectOptions(screen.getByLabelText('Role'), role);
+  if (role === 'Trainee') await user.type(screen.getByLabelText('Trainee ID'), 'T-1001');
   await user.click(screen.getByRole('button', { name: 'Sign in' }));
 }
 
@@ -39,6 +40,21 @@ describe('login and routing', () => {
     renderAt('/login');
     await userEvent.click(screen.getByRole('button', { name: 'Sign in' }));
     expect(screen.getByText('Enter your name.')).toBeInTheDocument();
+  });
+
+  it('requires a trainee ID for trainees only', async () => {
+    renderAt('/login');
+    await userEvent.type(screen.getByLabelText('Your name'), 'anna');
+    await userEvent.click(screen.getByRole('button', { name: 'Sign in' }));
+    expect(screen.getByText('Enter your trainee ID.')).toBeInTheDocument();
+    await userEvent.selectOptions(screen.getByLabelText('Role'), 'Admin');
+    expect(screen.queryByLabelText('Trainee ID')).not.toBeInTheDocument();
+  });
+
+  it('sends the trainee ID to the backend as a header', async () => {
+    renderAt('/login');
+    await signIn('Trainee');
+    expect(sessionStorage.getItem('main-ui.dev-user')).toContain('T-1001');
   });
 
   it('shows the four agents after login', async () => {

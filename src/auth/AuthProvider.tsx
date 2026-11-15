@@ -9,8 +9,9 @@ const AuthContext = createContext<AuthProviderApi | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(() => (AUTH_ENABLED ? loadDevUser() : localUser()));
 
-  const login = useCallback((name: string, role: Role) => {
-    const next = { name: name.trim(), role };
+  const login = useCallback((name: string, role: Role, traineeId?: string) => {
+    const id = role === 'trainee' ? traineeId?.trim() : undefined;
+    const next: User = { name: name.trim(), role, ...(id && { traineeId: id }) };
     saveDevUser(next);
     setUser(next);
   }, []);
