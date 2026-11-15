@@ -213,7 +213,7 @@ describe('status rule', () => {
   });
 
   it('marks a missing score as not assessed', () => {
-    expect(scoreStatus(null, 2)).toBe('not_assessed');
+    expect(scoreStatus(null, 2)).toBe('not_available');
   });
 
   it('places the bars on the 0 to 5 scale', () => {
@@ -259,9 +259,14 @@ describe('scores list', () => {
     ]);
   });
 
-  it('groups the rows into skill gaps, met and not assessed', () => {
+  it('groups the rows into skill gaps, met, not covered and not available', () => {
     const groups = groupScoreRows(T01.scores, T01.gap_threshold);
-    expect(groups.map((group) => group.title)).toEqual(['Skill gaps', 'Met', 'Not assessed']);
+    expect(groups.map((group) => group.title)).toEqual([
+      'Skill gaps',
+      'Met',
+      'Not covered',
+      'Not available',
+    ]);
     expect(groups[0].rows.map((row) => row.goal)).toEqual(['G03', 'G04']);
     expect(groups[1].rows.map((row) => row.goal)).toEqual([
       'G10',
@@ -273,7 +278,8 @@ describe('scores list', () => {
       'G09',
       'G11',
     ]);
-    expect(groups[2].rows.map((row) => row.goal)).toEqual(['G05', 'G12']);
+    expect(groups[2].rows.map((row) => row.goal)).toEqual(['G05']);
+    expect(groups[3].rows.map((row) => row.goal)).toEqual(['G12']);
   });
 
   it('leaves out a group with no rows', () => {
@@ -338,9 +344,9 @@ describe('goal status', () => {
     const g12 = T01.scores.find((row) => row.goal === 'G12')!;
     expect(goalStatusText(g05.status)).toBe('Not covered');
     expect(goalStatusText(g12.status)).toBe('Not available');
-    expect(rowStatus(g05, 2)).toBe('not_assessed');
+    expect(rowStatus(g05, 2)).toBe('not_covered');
     // Even if a number slipped through, a row that is not scored is grouped as not assessed.
-    expect(rowStatus({ ...g05, score: 4 }, 2)).toBe('not_assessed');
+    expect(rowStatus({ ...g05, score: 4 }, 2)).toBe('not_covered');
   });
 
   it('takes the source tags from each row, one per distinct section', () => {
@@ -491,11 +497,12 @@ describe('partial result from the agent', () => {
       .map((goal) => ({ goal, label: `Label ${goal}`, status: status(goal) })),
   };
 
-  it('groups the one scored goal as met and the other eleven as not assessed', () => {
+  it('groups the one scored goal as met, five as not covered and six as not available', () => {
     const groups = groupScoreRows(PARTIAL.scores, PARTIAL.gap_threshold);
     expect(groups.map((g) => [g.title, g.rows.length])).toEqual([
       ['Met', 1],
-      ['Not assessed', 11],
+      ['Not covered', 5],
+      ['Not available', 6],
     ]);
   });
 

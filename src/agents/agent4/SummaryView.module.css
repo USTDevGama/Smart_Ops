@@ -196,14 +196,6 @@
   color: var(--ust-ink-soft);
   margin: 0;
 }
-/* Text in place of the bar and number when a goal has no score. Spans both columns. */
-.noScore {
-  grid-column: span 2;
-  text-align: right;
-  font-size: 13px;
-  color: var(--ust-ink-soft);
-  white-space: nowrap;
-}
 .columns {
   display: grid;
   grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
@@ -234,6 +226,10 @@
 }
 .score:first-of-type {
   border-top: 0;
+}
+/* A goal with no score has no bar or number: the name and one status box. */
+.scoreNone {
+  grid-template-columns: minmax(0, 1fr) 112px;
 }
 .scoreGap .goal {
   color: var(--gap);
@@ -407,6 +403,9 @@
   }
   .score {
     grid-template-columns: minmax(0, 1fr) 70px 36px 72px;
+  }
+  .scoreNone {
+    grid-template-columns: minmax(0, 1fr) 112px;
   }
 }
 

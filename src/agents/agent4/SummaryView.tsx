@@ -7,7 +7,6 @@ import { ApiError, useAgent4Api, type RunStatus, type ScoreRow, type Summary } f
 import {
   exerciseTotals,
   formatMinutes,
-  goalStatusText,
   groupScoreRows,
   notAssessedNote,
   outcomeLine,
@@ -34,7 +33,8 @@ export function StatusBadge({ status }: { status: RunStatus }) {
 const PILL_CLASS: Record<ScoreStatus, string> = {
   gap: `${styles.pill} ${styles.pillGap}`,
   met: `${styles.pill} ${styles.pillMet}`,
-  not_assessed: `${styles.pill} ${styles.pillNa}`,
+  not_covered: `${styles.pill} ${styles.pillNa}`,
+  not_available: `${styles.pill} ${styles.pillNa}`,
 };
 
 function Tile({
@@ -83,7 +83,11 @@ function ScoreLine({ row, threshold }: { row: ScoreRow; threshold: number }) {
   const isGap = status === 'gap';
   const scored = row.status === 'scored' && row.score !== null;
   return (
-    <div className={isGap ? `${styles.score} ${styles.scoreGap}` : styles.score}>
+    <div
+      className={[styles.score, isGap && styles.scoreGap, !scored && styles.scoreNone]
+        .filter(Boolean)
+        .join(' ')}
+    >
       <div className={styles.goal}>
         {row.goal} {row.label}
         <div className={styles.sigs}>
@@ -102,9 +106,7 @@ function ScoreLine({ row, threshold }: { row: ScoreRow; threshold: number }) {
           </div>
           <div className={styles.num}>{row.score}</div>
         </>
-      ) : (
-        <div className={styles.noScore}>{goalStatusText(row.status)}</div>
-      )}
+      ) : null}
       <div className={PILL_CLASS[status]}>{STATUS_PILL_TEXT[status]}</div>
     </div>
   );

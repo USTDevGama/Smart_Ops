@@ -6,7 +6,7 @@ import { resourceForExercise, type ResourceLink } from './resourceLinks';
 
 export const SCALE_MAX = 5;
 
-export type ScoreStatus = 'gap' | 'met' | 'not_assessed';
+export type ScoreStatus = 'gap' | 'met' | 'not_covered' | 'not_available';
 
 export const STATUS_TEXT: Record<RunStatus, string> = {
   running: 'Running',
@@ -19,18 +19,23 @@ export const STATUS_TEXT: Record<RunStatus, string> = {
 export const STATUS_PILL_TEXT: Record<ScoreStatus, string> = {
   gap: 'Gap',
   met: 'Met',
-  not_assessed: 'Not assessed',
+  not_covered: 'Not covered',
+  not_available: 'Not available',
 };
 
 // A score at or below the threshold is a gap. The threshold comes from the API, never from here.
 export function scoreStatus(score: number | null, threshold: number): ScoreStatus {
-  if (score === null) return 'not_assessed';
+  if (score === null) return 'not_available';
   return score <= threshold ? 'gap' : 'met';
 }
 
 // A goal without status 'scored' is never given a number, whatever the score field holds.
 export function rowStatus(row: ScoreRow, threshold: number): ScoreStatus {
-  return row.status === 'scored' ? scoreStatus(row.score, threshold) : 'not_assessed';
+  return row.status === 'scored'
+    ? scoreStatus(row.score, threshold)
+    : row.status === 'not_covered'
+      ? 'not_covered'
+      : 'not_available';
 }
 
 // Position of a value on the 0 to 5 bar, as a CSS percentage.
@@ -83,7 +88,8 @@ export function groupScoreRows(rows: ScoreRow[], threshold: number): ScoreGroup[
   const groups: ScoreGroup[] = [
     { status: 'gap', title: 'Skill gaps', rows: [] },
     { status: 'met', title: 'Met', rows: [] },
-    { status: 'not_assessed', title: 'Not assessed', rows: [] },
+    { status: 'not_covered', title: 'Not covered', rows: [] },
+    { status: 'not_available', title: 'Not available', rows: [] },
   ];
   for (const row of sorted) {
     const status = rowStatus(row, threshold);

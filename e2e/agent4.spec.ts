@@ -30,11 +30,13 @@ for (const [label, size] of [
     const scores = page.locator('div[aria-label="Scores by goal"]');
     const g05 = scores.locator('div', { hasText: /^G05 Testing own work/ }).first();
     await expect(g05).toBeVisible();
-    await expect(scores.getByText('Not covered', { exact: true })).toBeVisible();
-    await expect(scores.getByText('Not available', { exact: true })).toBeVisible();
+    // A group for each, and the same words in the box on the right of each goal. No second column.
+    await expect(scores.getByText('Not covered', { exact: true })).toHaveCount(2);
+    await expect(scores.getByText('Not available', { exact: true })).toHaveCount(2);
+    await expect(scores.getByText('Not assessed', { exact: true })).toHaveCount(0);
 
     // The label is fully inside the page: no horizontal scroll, text not clipped.
-    const noScore = scores.getByText('Not available', { exact: true });
+    const noScore = scores.getByText('Not available', { exact: true }).last();
     const box = await noScore.boundingBox();
     expect(box!.x + box!.width).toBeLessThanOrEqual(size.width);
     const scrollW = await page.evaluate(() => document.documentElement.scrollWidth);

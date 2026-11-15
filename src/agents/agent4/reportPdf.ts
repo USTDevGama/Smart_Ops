@@ -10,7 +10,6 @@ import type { Summary } from './api';
 import {
   exerciseTotals,
   formatMinutes,
-  goalStatusText,
   groupScoreRows,
   notAssessedNote,
   outcomeLine,
@@ -278,10 +277,7 @@ function scores(doc: Doc, summary: Summary): void {
 
       const numRight = MARGIN + W - 72;
       const numY = doc.y + h / 2 + 3;
-      if (row.status !== 'scored' || row.score === null) {
-        doc.setFont(SANS, 'normal', 9, INK_SOFT);
-        doc.pdf.text(goalStatusText(row.status), numRight, numY, { align: 'right' });
-      } else {
+      if (row.status === 'scored' && row.score !== null) {
         doc.setFont(MONO, 'bold', 10, INK);
         doc.pdf.text(String(row.score), numRight, numY, { align: 'right' });
       }
