@@ -10,8 +10,9 @@
 
 ## What it shows
 
-- **Trainee (`TraineeView.tsx`):** the trainee enters a trainee ID and sees skill gaps,
-  recommendations and the skill report.
+- **Trainee (`TraineeView.tsx`):** the trainee sees their own skill gaps,
+  recommendations and the skill report. The trainee ID comes from the sign-in session
+  (`useAuth().user.traineeId`); there is no ID box.
 - **Evaluator (`EvaluatorView.tsx`):** a list of trainees with search and a status filter.
   Opening one shows the same results, plus the approve or reject decision for a report
   that is pending review. A trainee with no assessment can be assessed from there.
@@ -26,7 +27,7 @@ There is no chat. The earlier question-and-answer screen was removed.
 | ------------------- | ----------------------------------------------------------------------------- |
 | `index.tsx`         | Provides the API and the mock-data note                                       |
 | `AgentScreen.tsx`   | Picks the view from the role at login                                         |
-| `TraineeView.tsx`   | Trainee lookup by ID                                                          |
+| `TraineeView.tsx`   | Own results (ID from session)                                                 |
 | `EvaluatorView.tsx` | Trainee list and trainee detail                                               |
 | `SummaryView.tsx`   | Results page: tiles, overview, score groups, exercise cards, strong areas     |
 | `ReviewPanel.tsx`   | Approve or reject (a comment is required to reject)                           |
@@ -75,14 +76,14 @@ The request and response shapes were checked by reading the Pod 4 routes (`app/a
 ## Run and test
 
 - Mock data (no backend): `VITE_USE_MOCKS=true npm run dev`. Trainees `T-06` (full report)
-  and `T-09` (too-old assessment) are in the mock.
+  and `T-09` (too-old assessment) are in the mock. Sign in as a trainee with one of those IDs.
 - Real API: start the Pod 4 API on port 8010, then `npm run dev`.
 - Tests: `npm test`. Browser tests: `npm run test:e2e`.
 
 ## Open points
 
-- The trainee view takes any ID. Production must use the trainee's own ID from sign-in,
-  and the API must refuse other trainees' results.
+- The trainee view now uses the ID from the session, but that is not a permission check:
+  the API must refuse other trainees' results (the ID is a dev header today, a token claim later).
 - Not yet checked in a browser, and no Playwright spec for the ASGD flow yet.
 
 ## Deployed
