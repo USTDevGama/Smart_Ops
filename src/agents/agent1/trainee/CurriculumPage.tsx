@@ -268,7 +268,7 @@ export function CurriculumPage() {
             <label htmlFor="ctext">Paste curriculum text</label>
             <textarea
               id="ctext"
-              rows={5}
+              rows={8}
               value={text}
               onChange={(e) => setText(e.target.value)}
               disabled={busy}
