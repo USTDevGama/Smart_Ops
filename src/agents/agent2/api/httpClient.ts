@@ -102,6 +102,9 @@ export class HttpClient implements ApiClient {
   listRuns() {
     return this.request<RunSummary[]>('GET', '/runs');
   }
+  deleteRun(runId: string) {
+    return this.request<void>('DELETE', `/runs/${encodeURIComponent(runId)}`);
+  }
   getResult(runId: string) {
     return this.request<RunResult>('GET', `/runs/${encodeURIComponent(runId)}/result`);
   }

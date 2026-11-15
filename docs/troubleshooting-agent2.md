@@ -60,7 +60,7 @@ docker exec smart-ops-dashboard grep -n -A8 agent2-api /etc/nginx/conf.d/default
 **Edit the server `.env` and recreate the container** (nginx reads the value only at start):
 
 ```bash
-nano /data/apps/smart-ops-dashboard/.env      # AGENT2_API_URL=http://10.100.242.180:8085  (no quotes, no slash, no path)
+nano /data/apps/smart-ops-dashboard/.env      # AGENT2_API_URL=http://podb-backend:8000  (no quotes, no slash, no /api/v1)
 cd "$(docker inspect smart-ops-dashboard --format '{{index .Config.Labels "com.docker.compose.project.working_dir"}}')"
 TAG=$(docker inspect smart-ops-dashboard --format '{{.Config.Image}}' | cut -d: -f2)
 IMAGE_TAG=$TAG docker compose -f deploy/compose.prod.yml --env-file /data/apps/smart-ops-dashboard/.env up -d --force-recreate --wait

@@ -166,6 +166,17 @@ describe('runs', () => {
     expect(list[0].batch_id).not.toBe(list[1].batch_id);
   });
 
+  it('deletes a finished run from the history, and refuses a running or unknown one', async () => {
+    const { run_id } = await api.startRun({ filename: 'a.json', payload });
+    await expect(api.deleteRun(run_id)).rejects.toMatchObject({ status: 409 }); // still queued
+    clock += QUEUED_MS + 60 * PER_FLAG_MS;
+    expect((await api.getRun(run_id)).status).not.toBe('running');
+    await api.deleteRun(run_id);
+    expect(await api.listRuns()).toHaveLength(0);
+    await expect(api.getRun(run_id)).rejects.toMatchObject({ status: 404 });
+    await expect(api.deleteRun(run_id)).rejects.toMatchObject({ status: 404 });
+  });
+
   it('uses the batch_id from the input when it has one', async () => {
     const { run_id } = await api.startRun({
       filename: 'a.json',

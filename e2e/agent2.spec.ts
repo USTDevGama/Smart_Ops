@@ -70,6 +70,23 @@ test('trainee sees only the run page and can run and review', async ({ page }) =
   // each run is titled by its batch id, not by the uploaded file name
   await expect(page.getByText(/^Batch B-\d{4}$/).first()).toBeVisible();
   await expect(page.getByText('sample-input.json')).toHaveCount(0);
+
+  // delete the run: the dialog asks first, cancel keeps it, confirm removes it from the list
+  const cards = page.getByRole('listitem').filter({ hasText: /Batch B-\d{4}/ });
+  const before = await cards.count();
+  await cards
+    .first()
+    .getByRole('button', { name: /^Delete Batch/ })
+    .click();
+  const dialog = page.getByRole('dialog', { name: 'Delete this run?' });
+  await dialog.getByRole('button', { name: 'Cancel' }).click();
+  await expect(cards).toHaveCount(before);
+  await cards
+    .first()
+    .getByRole('button', { name: /^Delete Batch/ })
+    .click();
+  await dialog.getByRole('button', { name: 'Delete' }).click();
+  await expect(cards).toHaveCount(before - 1);
 });
 
 test('a rejected input keeps the main message and every field problem next to the form', async ({

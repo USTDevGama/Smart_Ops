@@ -4,7 +4,9 @@ import type { RunSummary } from '../api/types';
 import { batchLabel, fmtDateTime } from '../util/format';
 import Alert from './Alert';
 import Button from './Button';
+import Modal from './Modal';
 import StatusBadge from './StatusBadge';
+import { useToast } from './Toast';
 
 function Count({ label, value, hot }: { label: string; value: string | number; hot?: boolean }) {
   return (
@@ -15,16 +17,27 @@ function Count({ label, value, hot }: { label: string; value: string | number; h
   );
 }
 
-/** DESIGN_SPEC section 5.4: hover gives the highlight background and border; keyboard focus uses the accent outline. */
-function HistoryCard({ run, onOpen }: { run: RunSummary; onOpen: () => void }) {
+/**
+ * DESIGN_SPEC section 5.4: hover gives the highlight background and border; keyboard focus uses the accent outline.
+ * The card is a container with two sibling buttons (open, delete): a button cannot sit inside another button.
+ */
+function HistoryCard({
+  run,
+  onOpen,
+  onDelete,
+}: {
+  run: RunSummary;
+  onOpen: () => void;
+  onDelete: () => void;
+}) {
   const live = run.status === 'queued' || run.status === 'running';
   return (
-    <li>
+    <li className="flex flex-col rounded-md border border-line bg-surface transition-colors hover:border-highlight-border hover:bg-highlight">
       <button
         onClick={onOpen}
-        className="flex h-full w-full flex-col rounded-md border border-line bg-surface p-4 text-left transition-colors hover:border-highlight-border hover:bg-highlight"
+        className="flex w-full flex-1 flex-col rounded-md p-4 pb-2 text-left"
       >
-        <div className="flex items-start justify-between gap-2">
+        <div className="flex w-full items-start justify-between gap-2">
           <p className="truncate text-sm font-medium text-heading">{batchLabel(run.batch_id)}</p>
           <StatusBadge status={run.status} />
         </div>
@@ -32,7 +45,7 @@ function HistoryCard({ run, onOpen }: { run: RunSummary; onOpen: () => void }) {
           {fmtDateTime(run.created_at)}
         </time>
 
-        <dl className="mt-3 grid grid-cols-3 gap-2 text-center">
+        <dl className="mt-3 grid w-full grid-cols-3 gap-2 text-center">
           <Count label="Findings" value={live ? '…' : run.findings_total} />
           <Count label="Reviews" value={live ? '…' : run.review_total} />
           <Count
@@ -55,6 +68,18 @@ function HistoryCard({ run, onOpen }: { run: RunSummary; onOpen: () => void }) {
           </div>
         )}
       </button>
+      <div className="flex justify-end px-4 pb-3">
+        <Button
+          variant="danger-ghost"
+          size="sm"
+          onClick={onDelete}
+          disabled={live}
+          title={live ? 'Wait until the run has finished' : undefined}
+          aria-label={`Delete ${batchLabel(run.batch_id)}`}
+        >
+          Delete
+        </Button>
+      </div>
     </li>
   );
 }
@@ -63,6 +88,9 @@ function HistoryCard({ run, onOpen }: { run: RunSummary; onOpen: () => void }) {
 export default function HistoryView({ onOpen }: { onOpen: (runId: string) => void }) {
   const [runs, setRuns] = useState<RunSummary[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<RunSummary | null>(null);
+  const [busy, setBusy] = useState(false);
+  const toast = useToast();
 
   const load = useCallback(async () => {
     try {
@@ -74,6 +102,22 @@ export default function HistoryView({ onOpen }: { onOpen: (runId: string) => voi
   }, []);
 
   useEffect(() => void load(), [load]);
+
+  async function remove(run: RunSummary) {
+    setBusy(true);
+    try {
+      await api.deleteRun(run.run_id);
+      toast(`Deleted ${batchLabel(run.batch_id)}`, 'success');
+    } catch (e) {
+      // 404: it was already gone (another tab); anything else is shown with the server's message
+      if ((e as { status?: number }).status === 404) toast('That run was already deleted', 'info');
+      else toast((e as Error).message, 'error');
+    } finally {
+      setBusy(false);
+      setDeleting(null);
+    }
+    await load();
+  }
 
   // keep in-flight runs fresh
   const anyLive = runs?.some((r) => r.status === 'queued' || r.status === 'running');
@@ -109,9 +153,35 @@ export default function HistoryView({ onOpen }: { onOpen: (runId: string) => voi
       {runs && runs.length > 0 && (
         <ul className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {runs.map((r) => (
-            <HistoryCard key={r.run_id} run={r} onOpen={() => onOpen(r.run_id)} />
+            <HistoryCard
+              key={r.run_id}
+              run={r}
+              onOpen={() => onOpen(r.run_id)}
+              onDelete={() => setDeleting(r)}
+            />
           ))}
         </ul>
+      )}
+      {deleting && (
+        <Modal
+          title="Delete this run?"
+          onClose={() => !busy && setDeleting(null)}
+          footer={
+            <>
+              <Button variant="secondary" disabled={busy} onClick={() => setDeleting(null)}>
+                Cancel
+              </Button>
+              <Button variant="danger" disabled={busy} onClick={() => remove(deleting)}>
+                Delete
+              </Button>
+            </>
+          }
+        >
+          <p className="text-sm text-body">
+            <strong>{batchLabel(deleting.batch_id)}</strong> and its results are removed from the
+            history and from the database. This cannot be undone.
+          </p>
+        </Modal>
       )}
     </div>
   );

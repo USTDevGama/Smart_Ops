@@ -40,7 +40,7 @@ Until `AGENT2_API_URL` is set on the server, the Agent 2 screens show an error b
 
 1. **Find the backend address** as the dashboard container sees it. Pick one:
    - the backend published on the VM: `http://10.100.242.180:<published-port>` (what Agent 4 does), or
-   - the backend container on the `shared-services` Docker network: `http://<container-name>:8000` (what Agent 3 does with `pod-c-api`).
+   - the backend container on the `shared-services` Docker network: `http://<container-name>:8000` (what Agent 3 does with `pod-c-api`). **Agent 2 now uses this:** `AGENT2_API_URL=http://podb-backend:8000` (the new Pod B backend; it replaced `http://smart_ops_pod2-backend-1:8000`). After changing the value, recreate the dashboard container; `docker restart` is not enough because nginx reads it at creation.
 
    The backend listens on 8000 inside its container. If another pod already publishes 8000 on the VM, publish yours on a different host port.
 
