@@ -1,86 +1,85 @@
-// Trainee view: enter a trainee ID and see that trainee's skill gaps, recommendations and report.
-// The role is set at login. In production the trainee's own ID should come from sign-in, not
-// from this box; until then the API must limit trainees to their own results.
+// Trainee view: the signed-in trainee's own skill gaps, recommendations and report.
+// The trainee ID comes from the session (useAuth().user.traineeId), not from a box. The API must
+// still refuse other trainees' results: the UI is not a permission check.
 
-import { useState, type FormEvent } from 'react';
-import { Alert, Button, Input, Spinner } from '@/components/ui';
-import { ApiError, isMockMode, useAgent4Api, type Summary } from './api';
+import { useCallback, useEffect, useState } from 'react';
+import { Alert, Button, Spinner } from '@/components/ui';
+import { useAuth } from '@/auth';
+import { ApiError, useAgent4Api, type Summary } from './api';
 import { ResultsBlock } from './SummaryView';
 import { summaryErrorText } from './reportView';
 import styles from './AgentScreen.module.css';
 
 type Result =
-  | { kind: 'idle' }
   | { kind: 'loading' }
-  | { kind: 'none'; traineeId: string }
+  | { kind: 'none' }
   | { kind: 'incomplete' }
   | { kind: 'error'; text: string }
   | { kind: 'ok'; summary: Summary };
 
 export function TraineeView() {
   const api = useAgent4Api();
-  const [traineeId, setTraineeId] = useState('');
-  const [result, setResult] = useState<Result>({ kind: 'idle' });
+  const { user } = useAuth();
+  const traineeId = user?.traineeId;
+  const [result, setResult] = useState<Result>({ kind: 'loading' });
+  const [attempt, setAttempt] = useState(0);
 
-  async function lookup(event?: FormEvent) {
-    event?.preventDefault();
-    const id = traineeId.trim();
-    if (!id) {
-      setResult({ kind: 'idle' });
-      return;
-    }
+  const retry = useCallback(() => setAttempt((n) => n + 1), []);
+
+  useEffect(() => {
+    if (!traineeId) return;
+    let cancelled = false;
     setResult({ kind: 'loading' });
-    try {
-      setResult({ kind: 'ok', summary: await api.getSummary(id) });
-    } catch (error) {
-      if (error instanceof ApiError && error.status === 404) {
-        setResult({ kind: 'none', traineeId: id });
-      } else if (error instanceof ApiError && error.status === 409) {
-        setResult({ kind: 'incomplete' });
-      } else if (error instanceof ApiError) {
-        setResult({ kind: 'error', text: summaryErrorText(error.status, 'trainee') });
-      } else {
-        setResult({ kind: 'error', text: 'The results could not be loaded.' });
-      }
-    }
-  }
+    api.getSummary(traineeId).then(
+      (summary) => {
+        if (!cancelled) setResult({ kind: 'ok', summary });
+      },
+      (error: unknown) => {
+        if (cancelled) return;
+        if (error instanceof ApiError && error.status === 404) setResult({ kind: 'none' });
+        else if (error instanceof ApiError && error.status === 409)
+          setResult({ kind: 'incomplete' });
+        else if (error instanceof ApiError)
+          setResult({ kind: 'error', text: summaryErrorText(error.status, 'trainee') });
+        else setResult({ kind: 'error', text: 'The results could not be loaded.' });
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [api, traineeId, attempt]);
 
   return (
     <div className={styles.page}>
       <div className={styles.pageHead}>
         <h1>My skill results</h1>
-        <p>Enter your trainee ID to see your skill gaps, recommendations and skill report.</p>
+        <p>Your skill gaps, recommendations and skill report.</p>
       </div>
 
-      <form className={styles.lookup} onSubmit={lookup}>
-        <div className={styles.lookupField}>
-          <Input
-            label="Trainee ID"
-            value={traineeId}
-            onChange={(event) => setTraineeId(event.target.value)}
-            placeholder="for example T-06"
-            autoComplete="off"
-          />
-        </div>
-        <Button type="submit" disabled={result.kind === 'loading'}>
-          View results
-        </Button>
-      </form>
-      {isMockMode && <p className={styles.small}>Mock data: try T-06 or T-09.</p>}
-
       <div className={styles.result} aria-live="polite">
-        {result.kind === 'idle' && (
-          <p className={styles.empty}>Enter your trainee ID to see your results.</p>
+        {!traineeId && (
+          <Alert kind="warning">
+            Your account has no trainee ID. Sign out and sign in again with your trainee ID.
+          </Alert>
         )}
-        {result.kind === 'loading' && <Spinner label="Loading results" />}
-        {result.kind === 'none' && (
+        {traineeId && result.kind === 'loading' && <Spinner label="Loading results" />}
+        {traineeId && result.kind === 'none' && (
           <p className={styles.empty}>{summaryErrorText(404, 'trainee')}</p>
         )}
-        {result.kind === 'incomplete' && (
+        {traineeId && result.kind === 'incomplete' && (
           <p className={styles.empty}>Complete all your assessments to view your results.</p>
         )}
-        {result.kind === 'error' && <Alert kind="error">{result.text}</Alert>}
-        {result.kind === 'ok' && <ResultsBlock summary={result.summary} />}
+        {traineeId && result.kind === 'error' && (
+          <div className="stack-sm">
+            <Alert kind="error">{result.text}</Alert>
+            <div>
+              <Button variant="secondary" onClick={retry}>
+                Try again
+              </Button>
+            </div>
+          </div>
+        )}
+        {traineeId && result.kind === 'ok' && <ResultsBlock summary={result.summary} />}
       </div>
     </div>
   );
