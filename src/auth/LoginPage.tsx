@@ -72,7 +72,6 @@ export function LoginPage() {
                 }}
                 error={idError}
                 autoComplete="off"
-                helper="Your ID from the training programme."
               />
             </div>
           )}
