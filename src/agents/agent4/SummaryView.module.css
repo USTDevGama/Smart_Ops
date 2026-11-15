@@ -1,4 +1,4 @@
-/* Results page, from the trainee report design (trainee-report 1.html). Square corners, 1px hairlines,
+/* Results page, from the trainee report design (trainee-report 1.html). Rounded corners, 1px hairlines,
    no shadows. Colours are the portal tokens from theme.css; the three gap colours are not in the
    theme, so they are set once on .page. */
 
@@ -19,7 +19,8 @@
 
   background: var(--ust-bg);
   border: 1px solid var(--ust-hairline);
-  padding: 24px;
+  border-radius: var(--radius-lg);
+  padding: 28px;
   display: flex;
   flex-direction: column;
   gap: 24px;
@@ -33,6 +34,7 @@
   display: inline-block;
   padding: 2px 8px;
   border: 1px solid var(--ust-accent-deep);
+  border-radius: var(--ust-pill);
   font: 600 12px/18px var(--ust-font-text);
   white-space: nowrap;
   color: var(--ust-accent-deep);
@@ -83,8 +85,9 @@
 }
 .status {
   display: inline-block;
-  padding: 2px 10px;
+  padding: 2px 12px;
   border: 1px solid var(--ust-accent-deep);
+  border-radius: var(--ust-pill);
   font: 600 12px/18px var(--ust-font-text);
   color: var(--ust-accent-deep);
   background: var(--ust-accent-soft);
@@ -113,6 +116,7 @@
   color: var(--ust-bg);
   background: var(--ust-accent);
   border: 0;
+  border-radius: var(--radius-sm);
   padding: 12px 22px;
   cursor: pointer;
 }
@@ -142,7 +146,8 @@
 .tile {
   background: var(--ust-bg-alt);
   border: 1px solid var(--ust-hairline);
-  padding: 14px;
+  border-radius: var(--radius-md);
+  padding: 16px;
   min-width: 0;
 }
 .tileLabel {
@@ -242,6 +247,7 @@
   position: relative;
   height: 8px;
   background: var(--ust-track);
+  border-radius: var(--ust-pill);
 }
 .fill {
   position: absolute;
@@ -249,6 +255,7 @@
   top: 0;
   bottom: 0;
   background: var(--ust-accent);
+  border-radius: var(--ust-pill);
 }
 .scoreGap .fill {
   background: var(--gap);
@@ -260,6 +267,7 @@
   width: 2px;
   margin-left: -1px;
   background: var(--ust-ink);
+  border-radius: 1px;
 }
 .num {
   font: 500 15px/1 var(--ust-font-mono);
@@ -267,8 +275,9 @@
 }
 .pill {
   font: 600 12px/18px var(--ust-font-text);
-  padding: 1px 8px;
+  padding: 1px 10px;
   border: 1px solid;
+  border-radius: var(--ust-pill);
   text-align: center;
   white-space: nowrap;
 }
@@ -290,7 +299,8 @@
 .exCard {
   border: 1px solid var(--ust-hairline);
   border-left: 4px solid var(--gap);
-  padding: 14px 16px;
+  border-radius: var(--radius-md);
+  padding: 16px 18px;
   margin-bottom: 12px;
   background: var(--ust-bg);
   min-width: 0;
@@ -327,7 +337,8 @@
   font: 600 12px/18px var(--ust-font-text);
   color: var(--gap);
   background: var(--gap-soft);
-  padding: 1px 8px;
+  border-radius: var(--ust-pill);
+  padding: 1px 10px;
   white-space: nowrap;
 }
 .meta {
@@ -356,8 +367,9 @@
 }
 .matchTag {
   margin-left: 6px;
-  padding: 0 6px;
+  padding: 0 8px;
   border: 1px solid var(--ust-hairline);
+  border-radius: var(--ust-pill);
   font-size: 12px;
   white-space: nowrap;
 }
@@ -372,13 +384,15 @@
   background: var(--ust-accent-soft);
   border: 1px solid var(--ust-accent);
   color: var(--ust-accent-deep);
-  padding: 3px 10px;
+  padding: 3px 12px;
+  border-radius: var(--ust-pill);
   font-size: 14px;
 }
 .notice {
   margin: 0;
   background: var(--notice-bg);
   border-left: 4px solid var(--notice-line);
+  border-radius: var(--radius-md);
   padding: 12px 16px;
   font-size: 14px;
 }
@@ -425,8 +439,9 @@
 }
 .sig {
   font: 600 11px/16px var(--ust-font-text);
-  padding: 0 6px;
+  padding: 0 8px;
   border: 1px solid;
+  border-radius: var(--ust-pill);
   white-space: nowrap;
   font-weight: 600;
 }
