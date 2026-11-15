@@ -53,18 +53,6 @@
   align-items: center;
   gap: var(--space-3);
 }
-.userName {
-  font: 400 14px/20px var(--font-body);
-  color: var(--portal-ink-soft);
-}
-.role {
-  padding: 3px 10px;
-  background: var(--portal-badge-bg);
-  border: 1px solid var(--portal-badge-border);
-  border-radius: 6px;
-  font: 600 13px/18px var(--font-body);
-  color: var(--portal-ink);
-}
 .menu {
   position: relative;
 }
@@ -90,7 +78,7 @@
   position: absolute;
   right: 0;
   top: calc(100% + 8px);
-  min-width: 160px;
+  min-width: 220px;
   padding: var(--space-2) 0;
   background: var(--color-bg-surface);
   border: 1px solid var(--color-border-default);
@@ -108,6 +96,27 @@
     opacity: 1;
     transform: translateY(0);
   }
+}
+.profile {
+  margin: 0;
+  padding: var(--space-2) var(--space-4) var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.profile dt {
+  font: 400 12px/16px var(--font-body);
+  color: var(--portal-ink-soft);
+}
+.profile dd {
+  margin: 0;
+  font: 600 14px/20px var(--font-body);
+  color: var(--portal-ink);
+  overflow-wrap: anywhere;
+}
+.actions {
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--portal-line);
 }
 .menuItem {
   display: block;

@@ -70,34 +70,50 @@ export function Layout() {
           </div>
           {user && (
             <div className={styles.account}>
-              <span className={styles.userName}>{user.name}</span>
-              <span className={styles.role}>{user.role === 'admin' ? 'Admin' : 'Trainee'}</span>
-              {AUTH_ENABLED && (
-                <div className={styles.menu} ref={menuRef}>
-                  <button
-                    type="button"
-                    className={styles.avatar}
-                    aria-haspopup="menu"
-                    aria-expanded={menuOpen}
-                    aria-label={`Account menu for ${user.name}`}
-                    onClick={() => setMenuOpen((open) => !open)}
-                  >
-                    {initialsOf(user.name)}
-                  </button>
-                  {menuOpen && (
-                    <div className={styles.dropdown} role="menu">
-                      <button
-                        type="button"
-                        role="menuitem"
-                        className={styles.menuItem}
-                        onClick={() => logout()}
-                      >
-                        Sign out
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
+              <div className={styles.menu} ref={menuRef}>
+                <button
+                  type="button"
+                  className={styles.avatar}
+                  aria-haspopup="true"
+                  aria-expanded={menuOpen}
+                  aria-label={`Account menu for ${user.name}`}
+                  onClick={() => setMenuOpen((open) => !open)}
+                >
+                  {initialsOf(user.name)}
+                </button>
+                {menuOpen && (
+                  <div className={styles.dropdown}>
+                    <dl className={styles.profile} aria-label="Your profile">
+                      <div>
+                        <dt>Name</dt>
+                        <dd>{user.name}</dd>
+                      </div>
+                      <div>
+                        <dt>Role</dt>
+                        <dd>{user.role === 'admin' ? 'Admin' : 'Trainee'}</dd>
+                      </div>
+                      {user.traineeId && (
+                        <div>
+                          <dt>Trainee ID</dt>
+                          <dd>{user.traineeId}</dd>
+                        </div>
+                      )}
+                    </dl>
+                    {AUTH_ENABLED && (
+                      <div role="menu" className={styles.actions}>
+                        <button
+                          type="button"
+                          role="menuitem"
+                          className={styles.menuItem}
+                          onClick={() => logout()}
+                        >
+                          Sign out
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
