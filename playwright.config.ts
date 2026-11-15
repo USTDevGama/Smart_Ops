@@ -15,7 +15,7 @@ export default defineConfig({
   projects: [
     {
       name: 'mock',
-      testMatch: /(chat|agent2)\.spec\.ts/,
+      testMatch: /(chat|agent2|agent4)\.spec\.ts/,
       use: { ...devices['Desktop Chrome'], baseURL: `http://localhost:${MOCK_PORT}` },
     },
     {

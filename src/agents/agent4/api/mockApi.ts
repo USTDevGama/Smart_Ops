@@ -3,7 +3,8 @@ import type { RunStatus, ScoreRow, Summary, TraineeRow } from './types';
 
 /**
  * In-memory stand-in for the Pod 4 API (VITE_USE_MOCKS=true). It uses the same status codes as
- * the real server: 404 for a trainee with no scores, 409 for a trainee with a section missing.
+ * the real server: 404 for a trainee with no scores. A trainee with only some sections gets a
+ * partial summary with pending_sections (no 409).
  * The shape and the goal, exercise and outcome codes are the real ones; the trainee, the scores
  * and the agent's text are made up. State resets on page reload.
  */
@@ -28,7 +29,7 @@ const LABELS: Record<string, string> = {
   G12: 'Independent learning',
 };
 
-// Made-up scores for T-06. null is not assessed.
+// Made-up scores. null is not scored; the status says why.
 const MOCK_SCORES: [string, number | null][] = [
   ['G01', 4],
   ['G02', 3],
@@ -44,17 +45,37 @@ const MOCK_SCORES: [string, number | null][] = [
   ['G12', null],
 ];
 
-function scoreRows(): ScoreRow[] {
-  return MOCK_SCORES.map(([goal, score]) => ({
-    goal,
-    label: LABELS[goal],
-    score,
-    sources: score === null ? [] : [`A_scores.${goal}=${score}`],
-  }));
+// Which section each goal's score comes from in the full result (T-06). G06 has two sources.
+const SOURCE_OF: Record<string, string[]> = { G06: ['B_themes', 'C_scores'], G08: ['C_scores'] };
+
+const PENDING_BC = [
+  { code: 'B', label: 'Peer feedback' },
+  { code: 'C', label: 'Roleplay' },
+];
+
+// T-06: every section has data. T-01: only the interview (A) has data, so B and C are pending;
+// G05 is "not covered" in the database and G12 has no entry.
+function scoreRows(partial: boolean): ScoreRow[] {
+  return MOCK_SCORES.map(([goal, base]): ScoreRow => {
+    if (partial && goal === 'G05') {
+      return { goal, label: LABELS[goal], score: null, status: 'not_covered', sources: [] };
+    }
+    if (base === null) {
+      return { goal, label: LABELS[goal], score: null, status: 'not_available', sources: [] };
+    }
+    const sections = partial ? ['A_scores'] : (SOURCE_OF[goal] ?? ['A_scores']);
+    return {
+      goal,
+      label: LABELS[goal],
+      score: base,
+      status: 'scored',
+      sources: sections.map((section) => `${section}.${goal}=${base}`),
+    };
+  });
 }
 
-function summaryFor(traineeId: string, runId: string, status: RunStatus): Summary {
-  const scores = scoreRows();
+function summaryFor(traineeId: string, runId: string, status: RunStatus, partial = false): Summary {
+  const scores = scoreRows(partial);
   const gaps = scores
     .filter((row) => row.score !== null && row.score <= GAP_THRESHOLD)
     .map((row) => {
@@ -93,7 +114,7 @@ function summaryFor(traineeId: string, runId: string, status: RunStatus): Summar
     .map((row) => ({ goal: row.goal, label: row.label, score: row.score }));
   const notAssessed = scores
     .filter((row) => row.score === null)
-    .map((row) => ({ goal: row.goal, label: row.label }));
+    .map((row) => ({ goal: row.goal, label: row.label, status: row.status }));
 
   return {
     run_id: runId,
@@ -108,22 +129,26 @@ function summaryFor(traineeId: string, runId: string, status: RunStatus): Summar
     gaps,
     strong,
     not_assessed: notAssessed,
+    pending_sections: partial ? PENDING_BC : [],
     review_required: true,
     versions: { rules: '0.1.0', mapping: '0.2.0', content_library: 'builtin:sha256:mock' },
   };
 }
 
-type StoredRun = { status: RunStatus; summary: Summary | null };
+type StoredRun = { status: RunStatus; summary: Summary };
 
-// Trainees with a result. T-06 has a full result; T-09 has a section missing (409).
+// Trainees with a result. T-06 has a full result; T-01 has a partial one (B and C pending).
 const store = new Map<string, StoredRun>([
   ['T-06', { status: 'pending_review', summary: summaryFor('T-06', 'run-0006', 'pending_review') }],
-  ['T-09', { status: 'approved', summary: null }],
+  [
+    'T-01',
+    { status: 'pending_review', summary: summaryFor('T-01', 'run-0001', 'pending_review', true) },
+  ],
 ]);
 let runCounter = 100;
 
 // Every trainee in the trainee database, as the real list returns them. T-12 has no run yet.
-const TRAINEE_DB = ['T-06', 'T-09', 'T-12'];
+const TRAINEE_DB = ['T-01', 'T-06', 'T-12'];
 
 function rowsOf(): TraineeRow[] {
   return TRAINEE_DB.map((trainee_id) => {
@@ -149,9 +174,6 @@ export function createMockApi(): Agent4Api {
       if (!record) {
         throw new ApiError(404, `No results for ${traineeId}.`);
       }
-      if (!record.summary) {
-        throw new ApiError(409, 'A section (A, B or C) has no scores for this trainee.');
-      }
       return record.summary;
     },
 
@@ -168,9 +190,16 @@ export function createMockApi(): Agent4Api {
       return { run_id: runId, status: 'pending_review' };
     },
 
+    async downloadReport(summary) {
+      await sleep();
+      // The real server renders the PDF; the mock builds one in the browser from the same summary.
+      const { buildReportPdf } = await import('../reportPdf');
+      return buildReportPdf(summary);
+    },
+
     async submitReview(runId, body) {
       await sleep();
-      const entry = [...store.entries()].find(([, r]) => r.summary?.run_id === runId);
+      const entry = [...store.entries()].find(([, r]) => r.summary.run_id === runId);
       if (!entry) {
         throw new ApiError(404, 'That run was not found.');
       }
@@ -179,7 +208,7 @@ export function createMockApi(): Agent4Api {
       }
       const status: RunStatus = body.decision === 'approve' ? 'approved' : 'rejected';
       const [traineeId, record] = entry;
-      store.set(traineeId, { status, summary: { ...record.summary!, status } });
+      store.set(traineeId, { status, summary: { ...record.summary, status } });
       return { run_id: runId, status };
     },
   };

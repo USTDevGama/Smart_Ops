@@ -10,13 +10,22 @@ export type TraineeRow = {
   last_run_at: string | null;
 };
 
-// One goal's score. Goals come back in code order G01 to G12. score is null when not assessed.
+// scored: has a number. not_covered: the database says "not covered". not_available: no entry.
+export type GoalStatus = 'scored' | 'not_covered' | 'not_available';
+
+// One goal's score. Goals come back in code order G01 to G12. score is null unless status is
+// 'scored': never show a number for the other two.
 export type ScoreRow = {
   goal: string;
   label: string;
   score: number | null;
+  status: GoalStatus;
+  // Where each score came from, e.g. "B_themes.G06=3" (A_scores, B_themes, C_scores).
   sources: string[];
 };
+
+// A section (A, B or C) that has no data yet. The summary is returned without it.
+export type PendingSection = { code: string; label: string };
 
 export type Exercise = { id: string; title: string; minutes: number };
 
@@ -47,7 +56,9 @@ export type Summary = {
   scores: ScoreRow[];
   gaps: GapSummary[];
   strong: { goal: string; label: string; score: number | null }[];
-  not_assessed: { goal: string; label: string }[];
+  not_assessed: { goal: string; label: string; status: GoalStatus }[];
+  // Sections still waiting for data. Empty when the summary is complete.
+  pending_sections: PendingSection[];
   review_required: boolean;
   versions: { rules: string; mapping: string; content_library: string };
 };

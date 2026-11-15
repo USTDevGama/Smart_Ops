@@ -13,7 +13,6 @@ import styles from './AgentScreen.module.css';
 type Result =
   | { kind: 'loading' }
   | { kind: 'none' }
-  | { kind: 'incomplete' }
   | { kind: 'error'; text: string }
   | { kind: 'ok'; summary: Summary };
 
@@ -37,10 +36,8 @@ export function TraineeView() {
       (error: unknown) => {
         if (cancelled) return;
         if (error instanceof ApiError && error.status === 404) setResult({ kind: 'none' });
-        else if (error instanceof ApiError && error.status === 409)
-          setResult({ kind: 'incomplete' });
         else if (error instanceof ApiError)
-          setResult({ kind: 'error', text: summaryErrorText(error.status, 'trainee') });
+          setResult({ kind: 'error', text: summaryErrorText(error.status) });
         else setResult({ kind: 'error', text: 'The results could not be loaded.' });
       },
     );
@@ -64,10 +61,7 @@ export function TraineeView() {
         )}
         {traineeId && result.kind === 'loading' && <Spinner label="Loading results" />}
         {traineeId && result.kind === 'none' && (
-          <p className={styles.empty}>{summaryErrorText(404, 'trainee')}</p>
-        )}
-        {traineeId && result.kind === 'incomplete' && (
-          <p className={styles.empty}>Complete all your assessments to view your results.</p>
+          <p className={styles.empty}>{summaryErrorText(404)}</p>
         )}
         {traineeId && result.kind === 'error' && (
           <div className="stack-sm">

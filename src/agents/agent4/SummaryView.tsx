@@ -3,17 +3,20 @@
 
 import { useState, type ReactNode } from 'react';
 
-import type { RunStatus, ScoreRow, Summary } from './api';
+import { ApiError, useAgent4Api, type RunStatus, type ScoreRow, type Summary } from './api';
 import {
   exerciseTotals,
   formatMinutes,
+  goalStatusText,
   groupScoreRows,
   notAssessedNote,
   outcomeLine,
+  pendingNote,
   percentOfScale,
   recommendationCards,
+  reportErrorText,
   reportFileName,
-  scoreStatus,
+  rowStatus,
   signalsFor,
   SIGNAL_LABEL,
   STATUS_PILL_TEXT,
@@ -76,8 +79,9 @@ function ClockIcon() {
 }
 
 function ScoreLine({ row, threshold }: { row: ScoreRow; threshold: number }) {
-  const status = scoreStatus(row.score, threshold);
+  const status = rowStatus(row, threshold);
   const isGap = status === 'gap';
+  const scored = row.status === 'scored' && row.score !== null;
   return (
     <div className={isGap ? `${styles.score} ${styles.scoreGap}` : styles.score}>
       <div className={styles.goal}>
@@ -90,15 +94,17 @@ function ScoreLine({ row, threshold }: { row: ScoreRow; threshold: number }) {
           ))}
         </div>
       </div>
-      <div className={styles.track} aria-hidden="true">
-        {row.score !== null && (
-          <>
-            <div className={styles.fill} style={{ width: percentOfScale(row.score) }} />
+      {scored ? (
+        <>
+          <div className={styles.track} aria-hidden="true">
+            <div className={styles.fill} style={{ width: percentOfScale(row.score as number) }} />
             <div className={styles.threshold} style={{ left: percentOfScale(threshold) }} />
-          </>
-        )}
-      </div>
-      <div className={styles.num}>{row.score === null ? '—' : row.score}</div>
+          </div>
+          <div className={styles.num}>{row.score}</div>
+        </>
+      ) : (
+        <div className={styles.noScore}>{goalStatusText(row.status)}</div>
+      )}
       <div className={PILL_CLASS[status]}>{STATUS_PILL_TEXT[status]}</div>
     </div>
   );
@@ -189,6 +195,7 @@ function saveBlob(blob: Blob, fileName: string): void {
 export function ResultsBlock({ summary }: { summary: Summary }) {
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
+  const api = useAgent4Api();
   const threshold = summary.gap_threshold;
   const groups = groupScoreRows(summary.scores, threshold);
   const cards = recommendationCards(summary.gaps);
@@ -197,11 +204,10 @@ export function ResultsBlock({ summary }: { summary: Summary }) {
     setBusy(true);
     setMessage('');
     try {
-      const { buildReportPdf } = await import('./reportPdf');
-      saveBlob(buildReportPdf(summary), reportFileName(summary.trainee_id));
+      saveBlob(await api.downloadReport(summary), reportFileName(summary.trainee_id));
       setMessage('Report downloaded.');
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'The report could not be downloaded.');
+      setMessage(error instanceof ApiError ? reportErrorText(error.status) : reportErrorText(0));
     } finally {
       setBusy(false);
     }
@@ -258,6 +264,11 @@ export function ResultsBlock({ summary }: { summary: Summary }) {
           Overview
         </h2>
         <p className={styles.overview}>{summary.overview}</p>
+        {summary.pending_sections.length > 0 && (
+          <p className={styles.notice} role="status">
+            {pendingNote(summary.pending_sections)}
+          </p>
+        )}
       </section>
 
       <div className={styles.columns}>

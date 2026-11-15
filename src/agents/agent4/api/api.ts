@@ -9,6 +9,8 @@ export interface Agent4Api {
   getSummary(traineeId: string): Promise<Summary>;
   /** Starts an assessment from the trainee database. 404 when the trainee is unknown. */
   assess(traineeId: string): Promise<{ run_id: string; status: RunStatus }>;
+  /** The summary as a PDF file. The server does not call the agent again. 503: no PDF engine. */
+  downloadReport(summary: Summary): Promise<Blob>;
   submitReview(runId: string, body: ReviewBody): Promise<{ run_id: string; status: RunStatus }>;
 }
 
