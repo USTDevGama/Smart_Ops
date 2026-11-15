@@ -97,3 +97,23 @@ describe('PDF report', () => {
     await expect(api.downloadReport(SUMMARY)).rejects.toMatchObject({ status: 503 });
   });
 });
+
+describe('approved summary', () => {
+  it('calls the approved-summary path with the ID encoded', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(SUMMARY));
+    vi.stubGlobal('fetch', fetchMock);
+    await api.getApprovedSummary('T 01/x');
+    expect(fetchMock.mock.calls[0][0]).toBe('/agent4-api/v1/trainees/T%2001%2Fx/approved-summary');
+  });
+
+  it('keeps the 404 status for "No approved report yet"', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(jsonResponse({ detail: 'No approved report yet' }, 404)),
+    );
+    await expect(api.getApprovedSummary('T-01')).rejects.toMatchObject({
+      status: 404,
+      message: 'No approved report yet',
+    });
+  });
+});

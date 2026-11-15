@@ -64,6 +64,7 @@ export function createHttpApi(getAuthHeaders: () => Record<string, string>): Age
   return {
     listTrainees: () => request<TraineeRow[]>('/v1/trainees'),
     getSummary: (id) => request<Summary>(`${traineePath(id)}/summary`),
+    getApprovedSummary: (id) => request<Summary>(`${traineePath(id)}/approved-summary`),
     assess: (id) =>
       request<{ run_id: string; status: RunStatus }>(`${traineePath(id)}/assessments`, {
         method: 'POST',
