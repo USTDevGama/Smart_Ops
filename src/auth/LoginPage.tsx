@@ -37,9 +37,9 @@ export function LoginPage() {
   return (
     <main className={styles.page}>
       <Card className={styles.card}>
-        <img className={styles.logo} src={logo} alt="UST" width={40} height={40} />
         <form className="stack" onSubmit={onSubmit} noValidate>
-          <div className="stack-sm">
+          <div className={styles.header}>
+            <img className={styles.logo} src={logo} alt="UST" width={40} height={40} />
             <h1>Sign in</h1>
             <p>Pick your role, then choose an agent.</p>
           </div>

@@ -27,6 +27,10 @@
 .control:focus {
   border-color: var(--color-border-accent);
 }
+/* The accent border is the focus indicator; no extra ring around fields. */
+.control:focus-visible {
+  outline: none;
+}
 .control:disabled {
   background: var(--neu-50);
   color: var(--neu-500);
