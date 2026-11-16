@@ -102,17 +102,10 @@ export function createHttpApi(getAuthHeaders: () => Record<string, string>): Age
       request<{ run_id: string; status: RunStatus }>(`${traineePath(id)}/assessments`, {
         method: 'POST',
       }),
+    // Built in the browser from the report on screen: no request, no new run, same file every time.
     downloadReport: async (summary) => {
-      const response = await send(
-        '/v1/reports/pdf',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(summary),
-        },
-        'application/pdf',
-      );
-      return response.blob();
+      const { buildReportPdf } = await import('../reportPdf');
+      return buildReportPdf(summary);
     },
     submitReview: (runId, body: ReviewBody) =>
       request<{ run_id: string; status: RunStatus }>(

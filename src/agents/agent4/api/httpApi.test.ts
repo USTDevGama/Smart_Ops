@@ -78,23 +78,12 @@ describe('summary', () => {
 });
 
 describe('PDF report', () => {
-  it('posts the summary and returns the file', async () => {
-    const pdf = new Response('%PDF-1.4', { headers: { 'content-type': 'application/pdf' } });
-    const fetchMock = vi.fn().mockResolvedValue(pdf);
+  it('builds the file in the browser from the given summary, with no request', async () => {
+    const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
-
     const blob = await api.downloadReport(SUMMARY);
-
-    expect(fetchMock.mock.calls[0][0]).toBe('/agent4-api/v1/reports/pdf');
-    const init = fetchMock.mock.calls[0][1] as RequestInit;
-    expect(init.method).toBe('POST');
-    expect(JSON.parse(init.body as string).trainee_id).toBe('SYN-02');
-    expect(blob.size).toBe('%PDF-1.4'.length);
-  });
-
-  it('keeps the 503 status when the server has no PDF engine', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ detail: 'no engine' }, 503)));
-    await expect(api.downloadReport(SUMMARY)).rejects.toMatchObject({ status: 503 });
+    expect(blob.size).toBeGreaterThan(0);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });
 

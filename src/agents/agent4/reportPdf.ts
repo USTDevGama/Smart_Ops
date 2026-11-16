@@ -2,7 +2,7 @@
 // (ex 1.pdf): one column, a header with four tiles in two rows, the overview, scores by goal as a
 // plain list, then recommended exercises, strong areas, not assessed and the footer. The signal tags
 // (interview, peer feedback, roleplay) are added under each goal, as on the screen. Every value comes
-// from the summary. The screen does not call the server for the PDF.
+// from the summary. The download never calls the server.
 
 import { jsPDF } from 'jspdf';
 
@@ -80,7 +80,23 @@ class Doc {
   wrap(text: string, size: number, width: number, style: 'normal' | 'bold' = 'normal'): string[] {
     this.pdf.setFont(SANS, style);
     this.pdf.setFontSize(size);
-    return this.pdf.splitTextToSize(text, width) as string[];
+    // A word wider than the line (a long id or URL) is cut so it can never run off the page.
+    const safe = String(text ?? '')
+      .split(/(\s+)/)
+      .map((part) => {
+        if (/^\s*$/.test(part) || this.pdf.getTextWidth(part) <= width) return part;
+        const pieces: string[] = [];
+        let current = '';
+        for (const char of part) {
+          if (this.pdf.getTextWidth(current + char) > width) {
+            pieces.push(current);
+            current = char;
+          } else current += char;
+        }
+        return [...pieces, current].join(' ');
+      })
+      .join('');
+    return this.pdf.splitTextToSize(safe, width) as string[];
   }
 
   // Wrapped paragraph at (x, top). Returns the height used.
@@ -156,8 +172,9 @@ class Doc {
   }
 
   // Section heading: bold, with a heavy rule under it (as in the reference).
-  heading(text: string): void {
-    this.newPageIfNeeded(44);
+  // `keepWith` is the height of the content that must start on the same page as the heading.
+  heading(text: string, keepWith = 30): void {
+    this.newPageIfNeeded(30 + keepWith);
     this.setFont(SANS, 'bold', 12.5, INK);
     this.pdf.text(text, MARGIN, this.y + 11);
     this.line(MARGIN, MARGIN + W, this.y + 18, INK, 1.4);
@@ -187,9 +204,14 @@ function header(doc: Doc, summary: Summary): void {
   pdf.text(`Trainee ${summary.trainee_id}`, MARGIN, doc.y + 38);
   doc.pill(STATUS_TEXT[summary.status], MARGIN + W, doc.y, ACCENT_DEEP, WHITE, ACCENT_DEEP);
   doc.setFont(SANS, 'normal', 7, INK_SOFT);
-  pdf.text(`Report saved · run ${summary.run_id.slice(0, 8)}`, MARGIN + W, doc.y + 30, {
-    align: 'right',
-  });
+  pdf.text(
+    `Report saved · run ${String(summary.run_id ?? '').slice(0, 8)}`,
+    MARGIN + W,
+    doc.y + 30,
+    {
+      align: 'right',
+    },
+  );
   doc.y += 56;
 }
 
@@ -233,7 +255,15 @@ function tiles(doc: Doc, summary: Summary): void {
 
 function overview(doc: Doc, summary: Summary): void {
   doc.heading('Overview');
-  doc.y += doc.paragraph(summary.overview, MARGIN, doc.y, W, 10, INK) + 16;
+  doc.y +=
+    doc.paragraph(
+      summary.overview || 'No overview is saved with this report.',
+      MARGIN,
+      doc.y,
+      W,
+      10,
+      INK,
+    ) + 16;
 }
 
 // ---- Scores by goal ----
@@ -243,7 +273,7 @@ const NAME_W = W - 150;
 
 function scores(doc: Doc, summary: Summary): void {
   const threshold = summary.gap_threshold;
-  doc.heading('Scores by goal');
+  doc.heading('Scores by goal', 90);
 
   // Legend: the three signals, above the list.
   doc.newPageIfNeeded(20);
@@ -357,8 +387,9 @@ function card(doc: Doc, item: RecommendationCard, top: number, draw: boolean): n
 }
 
 function recommendations(doc: Doc, summary: Summary): void {
-  doc.heading('Recommended exercises');
   const cards = recommendationCards(summary.gaps);
+  // Keep the heading with the first card (or the empty-state line).
+  doc.heading('Recommended exercises', cards[0] ? card(doc, cards[0], 0, false) + 12 : 30);
   if (cards.length === 0) {
     doc.y +=
       doc.paragraph(
