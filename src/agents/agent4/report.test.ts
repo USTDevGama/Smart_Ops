@@ -382,9 +382,9 @@ describe('errors from the summary', () => {
 });
 
 describe('PDF download', () => {
-  it('names the file the way the server does', () => {
-    expect(reportFileName('SYN-01')).toBe('trainee-SYN-01-report.pdf');
-    expect(reportFileName('SYN-02/../x')).toBe('trainee-SYN-02x-report.pdf');
+  it('names the file ASGD_<trainee>_<run>', () => {
+    expect(reportFileName('SYN-01', 'run-7')).toBe('ASGD_SYN-01_run-7.pdf');
+    expect(reportFileName('SYN-02/../x')).toBe('ASGD_SYN-02x.pdf');
   });
 
   it('builds a PDF from the summary for both trainees', async () => {

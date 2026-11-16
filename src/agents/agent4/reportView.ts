@@ -247,7 +247,9 @@ export function goalStatusText(status: GoalStatus): string {
   return status === 'not_covered' ? 'Not covered' : 'Not available';
 }
 
-// File name for the download, as the server names it: trainee-{id}-report.pdf.
-export function reportFileName(traineeId: string): string {
-  return `trainee-${traineeId.replace(/[^A-Za-z0-9_-]/g, '')}-report.pdf`;
+// File name for the download, ASGD_<trainee-id>_<run-id>.pdf.
+export function reportFileName(traineeId: string, runId?: string): string {
+  const clean = (value: string) => value.replace(/[^A-Za-z0-9_-]/g, '');
+  const run = runId ? clean(runId) : '';
+  return `ASGD_${clean(traineeId)}${run ? `_${run}` : ''}.pdf`;
 }

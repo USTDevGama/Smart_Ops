@@ -12,12 +12,29 @@ export function errorDetail(body: unknown, fallback: string): string {
   if (body && typeof body === 'object' && 'detail' in body) {
     const detail = (body as { detail: unknown }).detail;
     if (typeof detail === 'string') return detail;
+    if (detail && typeof detail === 'object' && 'message' in detail) {
+      const message = (detail as { message: unknown }).message;
+      if (typeof message === 'string') return message;
+    }
     if (detail && typeof detail === 'object' && 'reasons' in detail) {
       const reasons = (detail as { reasons: unknown }).reasons;
       if (Array.isArray(reasons)) return `Rejected: ${reasons.join(', ')}`;
     }
   }
   return fallback;
+}
+
+/** The server's error code: {code} or {detail: {code}}. Undefined when there is none. */
+export function errorCode(body: unknown): string | undefined {
+  if (!body || typeof body !== 'object') return undefined;
+  const top = (body as { code?: unknown }).code;
+  if (typeof top === 'string') return top;
+  const detail = (body as { detail?: unknown }).detail;
+  if (detail && typeof detail === 'object') {
+    const code = (detail as { code?: unknown }).code;
+    if (typeof code === 'string') return code;
+  }
+  return undefined;
 }
 
 /**
@@ -80,6 +97,7 @@ export function createHttpApi(getAuthHeaders: () => Record<string, string>): Age
       throw new ApiError(
         response.status,
         errorDetail(body, `The service returned ${response.status}.`),
+        errorCode(body),
       );
     }
     return response;
@@ -96,6 +114,8 @@ export function createHttpApi(getAuthHeaders: () => Record<string, string>): Age
     listTrainees: () => request<TraineeRow[]>('/v1/trainees'),
     getSummary: async (id) =>
       normalizeSummary(await request<Partial<Summary>>(`${traineePath(id)}/summary`)),
+    getStoredSummary: async (id) =>
+      normalizeSummary(await request<Partial<Summary>>(`${traineePath(id)}/stored-summary`)),
     getApprovedSummary: async (id) =>
       normalizeSummary(await request<Partial<Summary>>(`${traineePath(id)}/approved-summary`)),
     assess: (id) =>
