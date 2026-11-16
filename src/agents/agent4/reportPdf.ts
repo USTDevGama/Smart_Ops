@@ -187,9 +187,14 @@ function header(doc: Doc, summary: Summary): void {
   pdf.text(`Trainee ${summary.trainee_id}`, MARGIN, doc.y + 38);
   doc.pill(STATUS_TEXT[summary.status], MARGIN + W, doc.y, ACCENT_DEEP, WHITE, ACCENT_DEEP);
   doc.setFont(SANS, 'normal', 7, INK_SOFT);
-  pdf.text(`Report saved · run ${summary.run_id.slice(0, 8)}`, MARGIN + W, doc.y + 30, {
-    align: 'right',
-  });
+  pdf.text(
+    `Report saved · run ${String(summary.run_id ?? '').slice(0, 8)}`,
+    MARGIN + W,
+    doc.y + 30,
+    {
+      align: 'right',
+    },
+  );
   doc.y += 56;
 }
 
@@ -233,7 +238,15 @@ function tiles(doc: Doc, summary: Summary): void {
 
 function overview(doc: Doc, summary: Summary): void {
   doc.heading('Overview');
-  doc.y += doc.paragraph(summary.overview, MARGIN, doc.y, W, 10, INK) + 16;
+  doc.y +=
+    doc.paragraph(
+      summary.overview || 'No overview is saved with this report.',
+      MARGIN,
+      doc.y,
+      W,
+      10,
+      INK,
+    ) + 16;
 }
 
 // ---- Scores by goal ----
