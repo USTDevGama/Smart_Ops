@@ -1,12 +1,14 @@
 // Evaluator view: the list of trainees, and for each one the results and the review decision.
+// Both the list and detail screens use the stored-first report loading flow to avoid unnecessary
+// agent runs when a report is already available.
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '@/auth';
 import { Alert, Button, Input, Select, Spinner } from '@/components/ui';
-import { ApiError, useAgent4Api, type RunStatus, type Summary, type TraineeRow } from './api';
+import { useAgent4Api, type RunStatus, type TraineeRow } from './api';
 import { ReviewPanel } from './ReviewPanel';
 import { ResultsBlock, StatusBadge } from './SummaryView';
-import { summaryErrorText } from './reportView';
+import { loadReportFlow, type Result } from './loadReportFlow';
 import styles from './AgentScreen.module.css';
 
 // Filter value for trainees with no run yet (their status is null).
@@ -153,43 +155,31 @@ function TraineeList({ onOpen }: { onOpen: (traineeId: string) => void }) {
 function TraineeDetail({ traineeId, onBack }: { traineeId: string; onBack: () => void }) {
   const api = useAgent4Api();
   const { user } = useAuth();
-  const [summary, setSummary] = useState<Summary | null>(null);
-  const [missing, setMissing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [running, setRunning] = useState(false);
+  const [result, setResult] = useState<Result>({ kind: 'loading' });
+  const [attempt, setAttempt] = useState({ n: 0, skipStored: false });
+  // One request chain per attempt. Strict Mode runs effects twice on the same component, and the
+  // ref survives that, so the second run reuses the first run's promise instead of calling again.
+  const flight = useRef<{ key: string; promise: Promise<Result> } | null>(null);
 
-  const load = useCallback(async () => {
-    setError(null);
-    setMissing(false);
-    try {
-      setSummary(await api.getSummary(traineeId));
-    } catch (err) {
-      if (err instanceof ApiError && err.status === 404) {
-        setMissing(true);
-      } else if (err instanceof ApiError) {
-        setError(summaryErrorText(err.status));
-      } else {
-        setError('The results could not be loaded.');
-      }
-    }
-  }, [api, traineeId]);
+  const retry = useCallback(
+    (stage: 'stored' | 'live') => setAttempt((a) => ({ n: a.n + 1, skipStored: stage === 'live' })),
+    [],
+  );
 
   useEffect(() => {
-    void load();
-  }, [load]);
-
-  async function assess() {
-    setRunning(true);
-    setError(null);
-    try {
-      await api.assess(traineeId);
-      await load();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'The assessment did not run.');
-    } finally {
-      setRunning(false);
+    let cancelled = false;
+    setResult({ kind: 'loading' });
+    const key = `${traineeId}:${attempt.n}`;
+    if (flight.current?.key !== key) {
+      flight.current = { key, promise: loadReportFlow(api, traineeId, attempt.skipStored) };
     }
-  }
+    void flight.current.promise.then((next) => {
+      if (!cancelled) setResult(next);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [api, traineeId, attempt]);
 
   return (
     <div className={styles.page}>
@@ -214,33 +204,34 @@ function TraineeDetail({ traineeId, onBack }: { traineeId: string; onBack: () =>
         </Button>
       </div>
       {/* With results, the results block carries the title and status, so it is not repeated. */}
-      {!summary && (
+      {result.kind !== 'ok' && (
         <div className={styles.pageHead}>
           <h1>Trainee {traineeId}</h1>
         </div>
       )}
 
-      {error && <Alert kind="error">{error}</Alert>}
-      {!summary && !error && !missing && <Spinner label="Loading results" />}
-      {missing && (
-        <div className={styles.card}>
-          <p>No assessment for {traineeId} yet.</p>
-          <div className={styles.actions}>
-            <Button onClick={() => void assess()} disabled={running}>
-              {running ? 'Running assessment' : 'Run assessment from the trainee database'}
+      {result.kind === 'error' && (
+        <div className="stack-sm">
+          <Alert kind="error">{result.text}</Alert>
+          <div>
+            <Button variant="secondary" onClick={() => retry(result.stage)}>
+              Try again
             </Button>
           </div>
         </div>
       )}
-      {summary && (
+      {result.kind === 'loading' && <Spinner label="Loading results" />}
+      {result.kind === 'ok' && (
         <>
-          <ResultsBlock summary={summary} />
-          {summary.status === 'pending_review' && (
+          <ResultsBlock summary={result.summary} />
+          {result.summary.status === 'pending_review' && (
             <div className={styles.card}>
               <ReviewPanel
-                runId={summary.run_id}
+                runId={result.summary.run_id}
                 reviewer={user?.name ?? ''}
-                onDone={(next) => setSummary({ ...summary, status: next })}
+                onDone={(next) => {
+                  setResult({ kind: 'ok', summary: { ...result.summary, status: next } });
+                }}
               />
             </div>
           )}
