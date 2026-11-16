@@ -205,10 +205,14 @@ export function ResultsBlock({ summary }: { summary: Summary }) {
   const cards = recommendationCards(summary.gaps);
 
   async function download() {
+    if (!summary) return;
     setBusy(true);
     setMessage('');
     try {
-      saveBlob(await api.downloadReport(summary), reportFileName(summary.trainee_id));
+      saveBlob(
+        await api.downloadReport(summary),
+        reportFileName(summary.trainee_id, summary.run_id),
+      );
       setMessage('Report downloaded.');
     } catch (error) {
       setMessage(error instanceof ApiError ? reportErrorText(error.status) : reportErrorText(0));
@@ -228,12 +232,14 @@ export function ResultsBlock({ summary }: { summary: Summary }) {
           <span className={`${styles.status} ${styles[`status_${summary.status}`]}`}>
             {STATUS_TEXT[summary.status]}
           </span>
-          <div className={styles.saved}>Report saved · run {summary.run_id.slice(0, 8)}</div>
+          <div className={styles.saved}>
+            Report saved · run {String(summary.run_id ?? '').slice(0, 8)}
+          </div>
           <button
             className={styles.download}
             type="button"
             onClick={() => void download()}
-            disabled={busy}
+            disabled={busy || !summary}
           >
             {busy ? 'Making report…' : 'Download report'}
           </button>

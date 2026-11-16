@@ -1,4 +1,4 @@
-import { ApiError, type Agent4Api } from './api';
+import { ApiError, REPORT_NOT_FOUND, type Agent4Api } from './api';
 import type { RunStatus, ScoreRow, Summary, TraineeRow } from './types';
 
 /**
@@ -170,9 +170,27 @@ export function createMockApi(): Agent4Api {
 
     async getSummary(traineeId) {
       await sleep();
+      let record = store.get(traineeId);
+      if (!record) {
+        if (!TRAINEE_DB.includes(traineeId)) {
+          throw new ApiError(404, `No results for ${traineeId}.`);
+        }
+        // The real server runs the agent and persists the result.
+        const runId = `run-${String(++runCounter).padStart(4, '0')}`;
+        record = {
+          status: 'pending_review',
+          summary: summaryFor(traineeId, runId, 'pending_review'),
+        };
+        store.set(traineeId, record);
+      }
+      return record.summary;
+    },
+
+    async getStoredSummary(traineeId) {
+      await sleep();
       const record = store.get(traineeId);
       if (!record) {
-        throw new ApiError(404, `No results for ${traineeId}.`);
+        throw new ApiError(404, 'No stored report for this trainee.', REPORT_NOT_FOUND);
       }
       return record.summary;
     },

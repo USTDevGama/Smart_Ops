@@ -4,7 +4,7 @@ import type { Agent4Api } from './api';
 import { createHttpApi } from './httpApi';
 import { createMockApi } from './mockApi';
 
-export { ApiError, type Agent4Api } from './api';
+export { ApiError, REPORT_NOT_FOUND, type Agent4Api } from './api';
 export * from './types';
 
 // Same switch as agent 3: VITE_USE_MOCKS=true runs the screen on the in-memory API.
