@@ -20,6 +20,37 @@ export function errorDetail(body: unknown, fallback: string): string {
   return fallback;
 }
 
+/**
+ * The persisted (approved) report is built from stored data and does not carry every field of a
+ * live summary: no overview, pending_sections, per-gap why, or per-goal status. Absent lists become
+ * empty lists and absent text becomes empty text, so the page never reads a missing field. Nothing
+ * is invented: a score row has status 'scored' only when it has a score.
+ */
+export function normalizeSummary(raw: Partial<Summary>): Summary {
+  const list = <T>(value: T[] | undefined | null): T[] => (Array.isArray(value) ? value : []);
+  return {
+    ...(raw as Summary),
+    overview: typeof raw.overview === 'string' ? raw.overview : '',
+    scores: list(raw.scores).map((row) => ({
+      ...row,
+      sources: list(row.sources),
+      status:
+        row.status ?? (row.score === null || row.score === undefined ? 'not_available' : 'scored'),
+      score: row.score ?? null,
+    })),
+    gaps: list(raw.gaps).map((gap) => ({
+      ...gap,
+      evidence: list(gap.evidence),
+      exercises: list(gap.exercises),
+      outcomes: list(gap.outcomes),
+      why: typeof gap.why === 'string' ? gap.why : '',
+    })),
+    strong: list(raw.strong),
+    not_assessed: list(raw.not_assessed),
+    pending_sections: list(raw.pending_sections),
+  };
+}
+
 /** Creates the real API client. Auth headers come from useAuth().getAuthHeaders(). */
 export function createHttpApi(getAuthHeaders: () => Record<string, string>): Agent4Api {
   async function send(path: string, init: RequestInit, expect: string): Promise<Response> {
@@ -63,8 +94,10 @@ export function createHttpApi(getAuthHeaders: () => Record<string, string>): Age
 
   return {
     listTrainees: () => request<TraineeRow[]>('/v1/trainees'),
-    getSummary: (id) => request<Summary>(`${traineePath(id)}/summary`),
-    getApprovedSummary: (id) => request<Summary>(`${traineePath(id)}/approved-summary`),
+    getSummary: async (id) =>
+      normalizeSummary(await request<Partial<Summary>>(`${traineePath(id)}/summary`)),
+    getApprovedSummary: async (id) =>
+      normalizeSummary(await request<Partial<Summary>>(`${traineePath(id)}/approved-summary`)),
     assess: (id) =>
       request<{ run_id: string; status: RunStatus }>(`${traineePath(id)}/assessments`, {
         method: 'POST',

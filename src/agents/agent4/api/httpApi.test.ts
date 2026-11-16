@@ -106,6 +106,46 @@ describe('approved summary', () => {
     expect(fetchMock.mock.calls[0][0]).toBe('/agent4-api/v1/trainees/T%2001%2Fx/approved-summary');
   });
 
+  it('fills fields the saved report does not carry, without inventing content', async () => {
+    // The exact shape of GET /v1/trainees/{id}/approved-summary (build_trainee_summary + run_id,
+    // status): no overview, pending_sections, per-gap why, or per-score status.
+    const saved = {
+      run_id: '5936cacf-0000-0000-0000-000000000000',
+      status: 'approved',
+      trainee_id: 'T-01',
+      assessed_count: 1,
+      goal_count: 2,
+      gap_threshold: 2,
+      scores: [
+        { goal: 'G08', label: 'Handling client pressure', score: 2, sources: ['C_scores.G08=2'] },
+        { goal: 'G12', label: 'Independent learning', score: null, sources: [] },
+      ],
+      gaps: [
+        {
+          goal: 'G08',
+          label: 'Handling client pressure',
+          score: 2,
+          severity: 'high',
+          evidence: ['C_scores.G08=2'],
+          outcome_match: 'partial',
+          exercises: [],
+          outcomes: [],
+        },
+      ],
+      strong: [],
+      not_assessed: [{ goal: 'G12', label: 'Independent learning' }],
+      outcomes_not_evidenced: [],
+      review_required: false,
+      versions: { rules: '1', mapping: '1', content_library: '1' },
+    };
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(saved)));
+    const summary = await api.getApprovedSummary('T-01');
+    expect(summary.pending_sections).toEqual([]);
+    expect(summary.overview).toBe('');
+    expect(summary.gaps[0].why).toBe('');
+    expect(summary.scores.map((row) => row.status)).toEqual(['scored', 'not_available']);
+  });
+
   it('keeps the 404 status for "No approved report yet"', async () => {
     vi.stubGlobal(
       'fetch',

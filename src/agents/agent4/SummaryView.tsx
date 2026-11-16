@@ -160,9 +160,11 @@ function RecommendationCard({ card }: { card: Card }) {
       <p className={styles.meta}>
         <strong>Linked goal:</strong> {card.goal}
       </p>
-      <p className={styles.meta}>
-        <strong>Why:</strong> {card.why}
-      </p>
+      {card.why && (
+        <p className={styles.meta}>
+          <strong>Why:</strong> {card.why}
+        </p>
+      )}
       <p className={styles.meta}>
         <strong>{card.outcomes.length === 1 ? 'Outcome:' : 'Outcomes:'}</strong>
       </p>
@@ -265,7 +267,11 @@ export function ResultsBlock({ summary }: { summary: Summary }) {
         <h2 id="rpt-overview" className={styles.h2}>
           Overview
         </h2>
-        <p className={styles.overview}>{summary.overview}</p>
+        {summary.overview ? (
+          <p className={styles.overview}>{summary.overview}</p>
+        ) : (
+          <p className={styles.muted}>No overview is saved with this report.</p>
+        )}
         {summary.pending_sections.length > 0 && (
           <p className={styles.notice} role="status">
             {pendingNote(summary.pending_sections)}
