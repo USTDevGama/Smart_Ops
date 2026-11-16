@@ -460,3 +460,33 @@
   border-color: var(--sig-c-line);
   background: var(--sig-c-bg);
 }
+
+/* Print: the old full-width vertical report. Scores by goal, then Recommended exercises below it,
+   each exercise a full-width card. Screen layout above is unchanged. */
+@media print {
+  .columns {
+    display: block;
+  }
+  .columns > .section + .section {
+    margin-top: 24px;
+  }
+  .scroll {
+    max-height: none;
+    overflow: visible;
+    padding-right: 0;
+  }
+  .h2,
+  .group {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+  .score,
+  .exCard {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .goal,
+  .exCard {
+    overflow-wrap: anywhere;
+  }
+}
